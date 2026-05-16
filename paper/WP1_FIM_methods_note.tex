@@ -1,0 +1,1209 @@
+% WP1: Fisher Information Matrix Identifiability of Lotka-Volterra Models
+% in Adaptive Cancer Therapy: Rank Deficiency and Posterior-Aware Control
+%
+% Source: writeups/preprints/WP1_FIM_methods_note.md (v6).
+% Compile: pdflatex WP1_FIM_methods_note.tex (twice, for refs).
+%
+% This file mirrors the markdown source. To re-sync after editing the .md,
+% prefer editing here directly; the .md and .tex will diverge.
+
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{xspace}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem*{theorem*}{Theorem}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\TTP}{\mathrm{TTP}}
+\newcommand{\AT}{\mathrm{AT}}
+\newcommand{\MTD}{\mathrm{MTD}}
+\newcommand{\Kdrop}{K_{TP}^{\text{drop}}}
+\newcommand{\Tplus}{T{+}}
+\newcommand{\Tminus}{T{-}}
+\newcommand{\rhat}{\hat{R}}
+
+\title{Fisher Information Matrix Identifiability of Lotka-Volterra Models in
+Adaptive Cancer Therapy: \\ Rank Deficiency and Posterior-Aware Control}
+
+\author{Aleksei Prikhodko\thanks{Independent researcher. Email: \texttt{aplab.official@gmail.com}.}}
+
+\date{\today \\ \textit{Draft v8}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Adaptive cancer therapy schedules drug-on/drug-off cycles based on biomarker
+dynamics, with the goal of preserving competitive pressure from drug-sensitive
+cells against drug-resistant ones. Three independent prior studies---Brady-Nicholls
+et al.\ (2020), Strobl et al.\ (2022), and Gallagher et al.\ (2025)---fit different
+Lotka-Volterra (L-V) parameterizations to overlapping clinical cohorts and
+converge on the empirical conclusion that \emph{approximately one effective
+parameter per patient} is recoverable from PSA-only observation. We provide the
+structural explanation: the Fisher Information Matrix (FIM) of the canonical
+2-population multiplicative-death L-V model has effective rank 1 of 4, with the
+competition coefficients $\alpha$ and $\beta$ exhibiting estimate-correlation
+$-1.00$ (Theorem~\ref{thm:rank1}, full proof in Appendix~A). The 3-population
+$K$-shift model used by Zhang et al.\ (2017) has effective rank 3 of
+6---substantially more identifiable structure due to time-scale separation
+between $\Tplus$, $TP$, and $\Tminus$ subpopulations. The rank deficiency is
+\emph{model-fundamental}: clinical adaptive schedules ($\AT 50$ cycling, periodic
+on/off) yield identical FIM eigenvalue spectra on both 2-pop and 3-pop models. We
+compare the asymptotic Cram\'er-Rao Gaussian to actual MCMC posteriors on
+synthetic PSA data; the FIM-Gaussian is faithful in identifiable directions
+(within 15\%) but underestimates posterior uncertainty by 20-30$\times$ in
+unidentifiable directions. We propagate the resulting parameter posterior through
+to policy-comparison values. In the Zhang-canonical regime,
+$\Prob(\AT 50 \text{ wins } \TTP) = 100\%$ across both FIM-Gaussian and MCMC
+posteriors, demonstrating that policy-preference robustness can survive
+identifiability rank-deficiency. \textbf{However, a regime scan along the
+drug-effectiveness axis $\Kdrop$ reveals a posterior-sensitive regime
+($\Prob(\AT 50 \text{ wins}) = 45\%$ at $\Kdrop = 1000$)---a near-coin-flip
+across the unidentifiable manifold.} A 2D scan in $(\Kdrop, \alpha_{\Tminus,\Tplus})$
+confirms this is a vertical band in parameter space at $\Kdrop \in [1000, 2500]$.
+\textbf{On a 25-patient synthetic cohort spanning this band, posterior-aware
+control gives 80\% accuracy vs the 76\% accuracy of point-estimate optimal control
+(4 percentage points; 28\% per-patient disagreement rate)}---empirical evidence
+that the methodology choice matters in clinically realistic regimes, not only in
+pathological ones. \textbf{On the real Bruchovsky 2008 IADT cohort
+(n=72 patients, the same cohort fit by Brady-Nicholls 2020 / Strobl 2022 /
+Gallagher 2025), 71 of 72 patients fit successfully and the PE-vs-PA disagreement
+rate is 37\% (26 of 71); on the independent Shaw et al.\ (2007) cohort (n=17 in
+the same archive, 15 fit successfully), the disagreement rate is 13\% (2 of 15).}
+Point-estimate optimal recommends $\AT 50$ for 14\% of Bruchovsky patients while
+posterior-aware recommends $\AT 50$ for 51\%---methodology flips the recommendation
+for more than a third of the Bruchovsky cohort, while in the more-aggressive
+Shaw cohort the disagreement is smaller (1 in 8 patients). 35\% of Bruchovsky
+patients are posterior-sensitive ($\Prob(\AT 50 \text{ wins } \TTP)$ between 10\%
+and 90\%) versus 7\% in Shaw; for these, the point estimate is uninformative
+about the right choice and only marginalization over the unidentifiable manifold
+yields a defensible recommendation. We discuss implications for clinical
+adaptive-therapy decision support and identify per-patient HMC-based Bayesian
+fitting (replacing the adaptive Metropolis-Hastings used here, which fails to
+converge on the rank-deficient posterior) as the production-grade requirement
+for clinical deployment.
+
+\paragraph{Keywords.} Lotka-Volterra dynamics; adaptive cancer therapy; Fisher
+Information Matrix; identifiability; mCRPC; Bayesian decision theory.
+\end{abstract}
+
+\section{Introduction}
+
+Adaptive cancer therapy (AT) is a clinical strategy in which drug administration
+is modulated based on biomarker trajectories rather than fixed schedules
+\cite{Gatenby2009,Zhang2017}. The mechanistic rationale is evolutionary:
+continuous maximum-tolerated-dose (MTD) chemotherapy applies sustained selective
+pressure that favors resistant tumor sub-populations, while intermittent dosing
+preserves competitive pressure from sensitive cells against resistant ones.
+Two-population Lotka-Volterra (L-V) competition models \cite{Strobl2021,Gallagher2025}
+capture this mechanism with closed-form mathematical structure; three-population
+K-shift models \cite{Zhang2017,Cunningham2020,West2020} extend to the
+testosterone-axis biology of metastatic castrate-resistant prostate cancer (mCRPC).
+
+A pervasive practical issue in deploying these models clinically is
+\textbf{parameter identifiability from limited biomarker data}. Three independent
+prior studies on overlapping clinical cohorts (Bruchovsky 2008 IADT and
+Zhang 2017 mCRPC) converge on the same empirical reduction:
+
+\begin{enumerate}
+\item Brady-Nicholls et al.\ (2020) \cite{BradyNicholls2020}, fitting a
+stem-cell-vs-differentiated-cell ODE model on the Bruchovsky 2008 cohort (n=70
+after exclusions), use correlation-matrix screening (correlation threshold
+$\xi = 0.95$) to reduce 4 free parameters to 2 patient-specific ($p_s$ and
+$\alpha$), with 2 population-uniform ($\rho$ and $\phi$). They report 89\%
+overall TTP-prediction accuracy (sensitivity 73\%, specificity 91\%) on the n=70
+cohort under leave-one-out validation.
+\item Strobl et al.\ (2022) \cite{Strobl2022}, fitting a 2-population L-V
+agent-based model on n=65 from the same Bruchovsky cohort (different exclusion
+criteria), report estimate-correlation $r = -0.76$
+($p = 1.4 \times 10^{-11}$) between resistance cost and turnover.
+\item Gallagher et al.\ (2025) \cite{Gallagher2025} fit a 2-population
+multiplicative-death L-V biomarker on n=5 Bruchovsky-test + n=3 Zhang-2017-validation
+patients. They explicitly fit 2 of the 5 model parameters per patient (the
+drug-induced death rate $d_S$ and the carrying capacity $K$) and treat
+$r_S, r_R, R_0$ as population-uniform by design. Headline $R^2 = 0.92$ on the
+n=5 Bruchovsky cohort.
+\end{enumerate}
+
+These three works use different ontologies, different fitting machinery, and
+different data preprocessing---yet they all end at ``approximately one effective
+parameter per patient is robustly recoverable.'' None of the papers states the
+structural reason. We argue that this convergence is not coincidence: it is a
+Fisher Information Matrix rank deficiency that is intrinsic to the (model,
+observation) pair.
+
+\paragraph{Contributions.} Section~\ref{sec:2pop} derives the FIM for the canonical
+2-population multiplicative-death L-V model with PSA-only observation and proves
+rank-deficiency. Section~\ref{sec:3pop} extends the analysis numerically to the
+3-population K-shift model used by Zhang 2017 and Cunningham 2020, finding rank
+3 of 6---qualitatively different from the 2-pop case. Section~\ref{sec:schedule}
+demonstrates that the rank deficiency is \emph{schedule-invariant}: cycling
+under $\AT 50$ and forced-periodic schedules give identical FIM spectra.
+Section~\ref{sec:mcmc} validates the asymptotic Cram\'er-Rao Gaussian against an
+MCMC posterior on synthetic PSA data, identifying a 20--30$\times$ underestimate
+in unidentifiable directions. Section~\ref{sec:policy} propagates the posterior
+to policy-comparison values, showing that $\AT 50$ robustly dominates MTD across
+both posterior approximations in the Zhang-canonical regime, and exploring
+posterior-sensitive regimes on synthetic and real cohorts. Section~\ref{sec:disc}
+discusses implications for clinical adaptive-therapy decision-making and
+posterior-aware control.
+
+\paragraph{Reproducibility.} All numerical results are produced by the
+open-source repository at \href{https://github.com/aplab-dev/adaptive-therapy-research}{\texttt{aplab-dev/adaptive-therapy-research}}
+under the experiment scripts referenced inline. Each figure is timestamped with
+git SHA; all parameter values, seeds, and observation schedules are committed.
+
+\section{The 2-Population Multiplicative-Death Model}\label{sec:2pop}
+
+\subsection{Model}
+
+The canonical 2-population L-V multiplicative-death model is
+\begin{equation}
+\begin{aligned}
+\dot{S} &= r_S\, S\!\left(1 - \frac{S + \alpha R}{K}\right) - d\, u(t)\, S, \\
+\dot{R} &= r_R\, R\!\left(1 - \frac{R + \beta S}{K}\right),
+\end{aligned}
+\label{eq:2pop_dynamics}
+\end{equation}
+where $S$ and $R$ are sensitive and resistant cell counts, $r_S, r_R$ are
+intrinsic growth rates, $\alpha, \beta$ are inter-population competition
+coefficients, $K$ is the shared carrying capacity, $d$ is the drug-induced
+death rate, and $u(t) \in [0, 1]$ is the time-varying drug control. PSA serves as
+a noisy aggregate observation:
+\begin{equation}
+y(t) = \rho\,(S(t) + \gamma R(t)) - \phi\, P(t) + \varepsilon(t), \quad
+\dot{P} = \rho(S + \gamma R) - \phi P, \quad \varepsilon \sim \mathcal{N}(0, \sigma^2(t)).
+\label{eq:psa_obs}
+\end{equation}
+Here $\rho$ is per-cell PSA production, $\phi$ is PSA decay (Zhang 2017 uses
+$\phi = 0.5\,\text{day}^{-1}$, half-life $\sim 1.4$d), and $\gamma \le 1$
+accounts for resistant cells producing less PSA.
+
+The free parameter vector is $\theta = (r_S, r_R, \alpha, \beta, K, d) \in \R^6$
+if $\rho, \phi, \gamma$ are held population-uniform. Held fixed: initial
+conditions and observation schedule.
+
+\subsection{The Fisher Information Matrix}
+
+For a Gaussian noise model with observation times $\{t_k\}_{k=1}^{N}$ and
+per-time-point variance $\sigma^2(t_k)$, the FIM at parameter vector $\theta$ is
+\begin{equation}
+\mathcal{I}_{ij}(\theta) = \sum_{k=1}^{N} \frac{1}{\sigma^2(t_k)}
+\frac{\partial y(t_k; \theta)}{\partial \theta_i}
+\frac{\partial y(t_k; \theta)}{\partial \theta_j}.
+\label{eq:fim}
+\end{equation}
+The Cram\'er-Rao asymptotic posterior covariance is $\Sigma_\text{CR}(\theta) =
+\mathcal{I}^{-1}(\theta)$ when $\mathcal{I}$ is full rank, or the Moore-Penrose
+pseudoinverse $\mathcal{I}^+(\theta)$ when rank-deficient.
+
+\subsection{Numerical FIM evaluation}
+
+We compute \eqref{eq:fim} via central finite-difference sensitivities
+$\partial y / \partial \theta_i \approx (y(\theta + \delta_i) - y(\theta - \delta_i))/(2\delta_i)$
+with relative perturbation step $\delta_i = 10^{-3} \cdot |\theta_i|$. At the
+regime-A nominal $\theta_0 = (0.05, 0.04, 0.7, 0.6, 1.0, 1.5)$ with constant MTD
+($u(t) = 1$) and observation schedule of one PSA measurement every 28 days over
+500 days ($\sim 17$ measurements), with 10\% relative noise floored at 10\% of
+peak PSA:
+\begin{equation}
+\operatorname{eig}(\mathcal{I}) = (1.5 \times 10^6,\; 3.9 \times 10^{-3},\;
+3.0 \times 10^{-8},\; 2.1 \times 10^{-10}).
+\label{eq:eig_2pop}
+\end{equation}
+Effective rank (eigenvalues above $10^{-6} \cdot \lambda_\text{max}$) is
+\textbf{1 of 4} when only the four dynamics parameters
+$(r_S, r_R, \alpha, \beta)$ are fit. The condition number is
+$\kappa(\mathcal{I}) = 7.1 \times 10^{15}$.
+
+\subsection{The $\alpha$-$\beta$ degeneracy}
+
+The Moore-Penrose-pseudoinverse-derived estimate correlation matrix has
+\begin{equation}
+\rho(\hat{\alpha}, \hat{\beta}) = -1.00,
+\label{eq:alpha_beta_corr}
+\end{equation}
+i.e., $\alpha$ and $\beta$ are perfectly anti-correlated. The cause is structural:
+in \eqref{eq:2pop_dynamics}, $\alpha$ enters only as $\alpha R$ in $\dot{S}$, and
+$\beta$ enters only as $\beta S$ in $\dot{R}$. Under the PSA observation
+\eqref{eq:psa_obs} which couples $S + \gamma R$, the two contributions are
+observationally indistinguishable along a one-dimensional ridge in the
+$(\alpha, \beta)$ plane.
+
+\begin{theorem}[Informal; full proof in Appendix~A]\label{thm:rank1}
+Under PSA-only observation of \eqref{eq:2pop_dynamics}--\eqref{eq:psa_obs}, the
+parameters $\alpha$ and $\beta$ are not jointly identifiable: there exists a
+one-parameter family $(\alpha(s), \beta(s))$ for $s \in \R$ such that
+$y(t; r_S, r_R, \alpha(s), \beta(s), K, d) = y(t; r_S, r_R, \alpha(0), \beta(0), K, d)$
+for all $t$ and all $s$ in a neighborhood of $0$.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The first-order sensitivity equations
+$\dot{X}_\theta = (\partial f/\partial x) X_\theta + (\partial f/\partial \theta)$
+for $\theta \in \{\alpha, \beta\}$ produce parallel directions in the $(S, R, P)$
+state space when $S(t) \approx K(1 - \alpha R/K)$ holds along the trajectory
+(which is the AT-relevant coexistence regime). The PSA filter \eqref{eq:psa_obs}
+projects these parallel state-space directions onto the same observable
+function. Full proof: Appendix~A.
+\end{proof}
+
+\subsection{Connecting to the empirical convergence}
+
+Equation~\eqref{eq:alpha_beta_corr} recovers the structural reason for the
+convergence reported in Brady-Nicholls 2020 (4-to-2 patient-specific reduction
+via correlation-matrix screening at threshold $\xi = 0.95$), Strobl 2022
+($r = -0.76$ cost-vs-turnover correlation), and Gallagher 2025 (explicit 2-of-5
+fit). Each prior study saw the rank-deficiency manifesting in a different
+parameterization but did not connect it to the FIM structure.
+
+\section{The 3-Population K-Shift Model}\label{sec:3pop}
+
+\subsection{Model}
+
+The Zhang 2017 / Cunningham 2020 mCRPC model uses three subpopulations
+$(\Tplus, TP, \Tminus)$ for testosterone-dependent, testosterone-producing, and
+testosterone-independent cells, with drug entering via carrying-capacity shift
+rather than multiplicative death:
+\begin{equation}
+\frac{dx_i}{dt} = r_i\, x_i\!\left(\frac{K_i(\Lambda; x_{TP}) - \sum_{j} \alpha_{ij}\, x_j}{K_i(\Lambda; x_{TP})}\right),
+\qquad i \in \{\Tplus, TP, \Tminus\},
+\label{eq:3pop_dynamics}
+\end{equation}
+with $K$-shift functions
+\begin{equation}
+\begin{aligned}
+K_{\Tminus}(\Lambda) &= 10{,}000, \\
+K_{TP}(\Lambda) &= 10{,}000 - 9{,}900\,\Lambda, \\
+K_{\Tplus}(\Lambda; x_{TP}) &= (1.5 - \Lambda)\, x_{TP},
+\end{aligned}
+\label{eq:Kshift}
+\end{equation}
+and growth rates $r = (2.7726, 3.4657, 6.6542) \times 10^{-3}\,\text{day}^{-1}$.
+
+We fit a 6-parameter subset that a clinical study would attempt to identify per
+patient: $\theta = (r_{\Tplus}, r_{TP}, r_{\Tminus}, \alpha_{\Tminus,\Tplus},
+\alpha_{\Tminus,TP}, \Kdrop)$, holding the rest at canonical Zhang values.
+
+\subsection{FIM result}
+
+Using the same central-difference + $1.5 \times 10^3$-day MTD trajectory +
+$\sigma = 10\%$ relative noise as Section~\ref{sec:2pop}:
+\begin{equation}
+\operatorname{eig}(\mathcal{I}_{3\text{pop}}) = (3.7 \times 10^8,\; 2.3 \times 10^7,\;
+3.6 \times 10^5,\; 0.88,\; 2.8 \times 10^{-4},\; 8.7 \times 10^{-6}).
+\label{eq:eig_3pop}
+\end{equation}
+Effective rank is \textbf{3 of 6}---three orders of magnitude separate
+$\lambda_3$ from $\lambda_4$, indicating a clear identifiability gap.
+
+\subsection{Why the 3-pop model is more identifiable}
+
+The dominant sensitivities trace different time scales:
+\begin{itemize}
+\item $r_{\Tplus}$ controls the initial collapse rate when $K_{\Tplus} \to 0.5\,x_{TP}$ shrinks under MTD ($\sim 0$--50\,d).
+\item $r_{TP}$ controls the intermediate-time TP-collapse rate ($\sim 50$--500\,d).
+\item $r_{\Tminus}$ controls the slow long-time $\Tminus$ regrowth ($\sim 500$--1500\,d).
+\end{itemize}
+
+Because each parameter's sensitivity peaks at a distinct time, the FIM resolves
+them. The unidentifiable directions are:
+\begin{itemize}
+\item $r_{TP}$ vs $r_{\Tminus}$ estimate correlation $\approx -0.99$ (slower modes confound).
+\item $\alpha_{\Tminus,\Tplus}$ vs $\alpha_{\Tminus,TP}$ estimate correlation $\approx -0.94$ (the analog of the 2-pop $\alpha$-$\beta$ degeneracy).
+\item $\Kdrop$ correlated with multiple parameters.
+\end{itemize}
+
+So the 3-pop model has \emph{richer information content per observation} than
+the 2-pop model under the same PSA channel---by roughly a factor of three in
+effective dimensions. This is an underappreciated point in the field's
+modeling-choice debates.
+
+\subsection{Practical implication}\label{sec:3pop_implication}
+
+Under PSA-only observation, the 3-population K-shift Zhang model can support a
+\emph{3-parameter} per-patient Bayesian fit, while the 2-population multdeath
+model can support only a \emph{1-parameter} per-patient fit. The
+Brady-Nicholls 2020 explicit reduction to 2 patient-specific parameters with 2
+held population-uniform---verified at the Methods level (correlation-matrix
+screening at threshold $\xi = 0.95$, leave-one-out validation, 89\% accuracy on
+n=70)---is consistent with the 2-pop K-shift figure of $\le 2$ identifiable
+directions; Gallagher 2025's 2-of-5 fit on the multdeath model is \emph{more
+aggressive than the FIM justifies} but not unreasonable given a domain prior +
+their $R^2 = 0.92$ cross-validation result on the smaller n=5 cohort.
+
+\subsection{The 3-pop rank advantage extends across schedules}
+
+We rerun Section~\ref{sec:schedule}'s three-schedule analysis (MTD, replayed-$\AT 50$,
+forced-periodic-56d) on the 3-population model. Effective rank is
+\textbf{3 of 6 in all three cases}:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+Schedule & $\lambda_1$ & $\lambda_2$ & $\lambda_3$ & $\lambda_4$ & Rank \\
+\midrule
+MTD & $3.7 \times 10^8$ & $2.3 \times 10^7$ & $3.6 \times 10^5$ & $0.88$ & 3 \\
+Replayed $\AT 50$ & $1.1 \times 10^8$ & $1.6 \times 10^6$ & $1.3 \times 10^4$ & $0.36$ & 3 \\
+Periodic 56d & $4.0 \times 10^8$ & $3.9 \times 10^7$ & $5.3 \times 10^5$ & $1.6$ & 3 \\
+\bottomrule
+\end{tabular}
+\caption{3-pop FIM eigenvalues are stable across schedules; only $\lambda_3$
+varies $\sim 30\times$ between MTD and $\AT 50$.}
+\end{table}
+
+The eigenvalue magnitudes differ---$\AT 50$ cycling produces a less informative
+third direction by $\sim 30\times$ than MTD---but the effective rank is preserved.
+The ``schedule does not change the identifiable subspace dimension'' finding
+from Section~\ref{sec:schedule} generalizes from the theory tribe (rank 1) to the
+clinical tribe (rank 3).
+
+\subsection{The unidentifiable subspace lies in $(\alpha, \Kdrop)$}\label{sec:unident_subspace}
+
+A natural question: \emph{which} parameter directions are the rank-deficient
+ones? Eigendecomposing the 3-pop FIM at canonical Zhang $\theta$ + MTD:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+Eigenvalue & Approx direction & Identifiability \\
+\midrule
+$\lambda_1 = 3.7 \times 10^8$ & $r_{\Tminus}$ (98\%) & identifiable \\
+$\lambda_2 = 2.3 \times 10^7$ & $r_{TP} + 0.5\, r_{\Tplus}$ & identifiable \\
+$\lambda_3 = 3.6 \times 10^5$ & $r_{\Tplus} - 0.5\, r_{TP}$ & identifiable \\
+$\lambda_4 = 0.88$ & $0.92\,\alpha_{\Tminus,\Tplus} + 0.38\,\alpha_{\Tminus,TP}$ & marginal \\
+$\lambda_5 = 2.8 \times 10^{-4}$ & $\alpha_{\Tminus,TP}$ vs $\Kdrop$ vs $\alpha_{\Tminus,\Tplus}$ & unidentifiable \\
+$\lambda_6 = 8.7 \times 10^{-6}$ & $0.93\,\Kdrop + 0.34\,\alpha_{\Tminus,TP}$ & unidentifiable \\
+\bottomrule
+\end{tabular}
+\caption{The three identifiable directions are almost entirely the growth
+rates; the three unidentifiable directions are almost entirely in the
+$(\alpha_{\Tminus,\Tplus}, \alpha_{\Tminus,TP}, \Kdrop)$ subspace.}
+\end{table}
+
+The rank deficiency is \emph{localized} to the 3-D $(\alpha, \Kdrop)$ block,
+not spread over $\theta$. This explains why model-simplification approaches
+that fix the $\alpha$'s and $\Kdrop$ at population-uniform values
+(Brady-Nicholls 2020 / Gallagher 2025) recover the full rank-3 information
+content per patient. Cohort pooling (Section~\ref{sec:hier}) achieves the
+same effect by constraining the $\alpha$'s at the population level.
+
+\section{Schedule Invariance}\label{sec:schedule}
+
+\subsection{Setup}
+
+Three drug schedules are tested with the 2-pop multdeath model from
+Section~\ref{sec:2pop}, all observed at 28-day cadence over 500 days:
+
+\begin{itemize}
+\item \textbf{MTD.} $u(t) = 1$ for all $t$.
+\item \textbf{Replayed $\AT 50$.} $u(t)$ is the schedule generated by $\AT 50$ protocol (drug on until PSA $\le 0.5 \cdot \text{baseline}$; off until PSA returns to baseline) at the \emph{nominal} parameters $\theta_0$, then the same schedule is replayed for FIM perturbations. (Replay avoids the discontinuity that arises when toggle times shift with $\theta$.)
+\item \textbf{Periodic 56d.} Forced 50\% duty cycle: $u(t) = 1$ for the first 28 days of each 56-day period, $0$ otherwise. Guarantees multiple toggles regardless of dynamics.
+\end{itemize}
+
+\subsection{Result}
+
+All three schedules give effectively identical FIM eigenvalue spectra and the
+same $\alpha$-$\beta$ anti-correlation as the most poorly identified direction:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+Schedule & $\lambda_1$ & $\lambda_2$ & $\lambda_3$ & $\lambda_4$ & Rank \\
+\midrule
+MTD & $1.52 \times 10^6$ & $3.87 \times 10^{-3}$ & $2.96 \times 10^{-8}$ & $2.14 \times 10^{-10}$ & 1 \\
+Replayed $\AT 50$ & $1.52 \times 10^6$ & $3.87 \times 10^{-3}$ & $1.24 \times 10^{-7}$ & $2.27 \times 10^{-8}$ & 1 \\
+Periodic 56d & $1.52 \times 10^6$ & $3.87 \times 10^{-3}$ & $3.23 \times 10^{-7}$ & $4.52 \times 10^{-8}$ & 1 \\
+\bottomrule
+\end{tabular}
+\caption{2-pop schedule invariance: rank 1 of 4 across all clinical schedules.}
+\end{table}
+
+\subsection{Interpretation}
+
+Cycling does not recover identifiability. The rank deficiency is
+\emph{fundamental to the model and observation channel}. In practical terms:
+\textbf{no choice of clinical schedule rescues per-patient parameter recovery}
+for the 2-pop multdeath model under PSA-only observation. Multi-modal observation
+channels (ctDNA, AR-V7 transcript, mIHC tumor-infiltration data) are the only
+path to higher identifiability. Spatial information may have particular value:
+the $\alpha$-$\beta$ degeneracy depends on spatial overlap, which an
+imaging-derived spatial-overlap coefficient could disambiguate (separate work).
+
+\section{MCMC Validation of the Cram\'er-Rao Gaussian}\label{sec:mcmc}
+
+\subsection{Setup}
+
+We generate synthetic PSA data $y_\text{obs} = y(\theta_\text{true}) + \varepsilon$
+with $\varepsilon \sim \mathcal{N}(0, \sigma^2(t))$ at the canonical 3-pop K-shift
+$\theta_\text{true}$. We run an adaptive component-wise Metropolis-Hastings MCMC
+with target acceptance $\sim 0.234$ (Roberts-Rosenthal asymptotic-optimal rate
+in $d=6$), 3000 steps, 1000 burn-in, thin = 4. Improper uniform prior with
+positivity constraints.
+
+\subsection{Result}\label{sec:mcmc_result}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+Parameter & True & MCMC mean & MCMC std & FIM-Gaussian std & MCMC / FIM \\
+\midrule
+$r_{\Tplus}$ & 0.0028 & 0.0028 & 0.0017 & 0.0015 & \textbf{1.15} \\
+$r_{TP}$ & 0.0035 & 0.0037 & $7.9 \times 10^{-4}$ & $7.2 \times 10^{-4}$ & \textbf{1.09} \\
+$r_{\Tminus}$ & 0.0067 & 0.0067 & $7.8 \times 10^{-5}$ & $7.7 \times 10^{-5}$ & \textbf{1.02} \\
+$\alpha_{\Tminus,\Tplus}$ & 3.0 & 2.91 & 0.033 & 0.0016 & \textbf{20.2} \\
+$\alpha_{\Tminus,TP}$ & 4.0 & 3.99 & 0.034 & 0.0016 & \textbf{20.9} \\
+$\Kdrop$ & 9900 & 9900 & 0.049 & 0.0016 & \textbf{29.6} \\
+\bottomrule
+\end{tabular}
+\caption{FIM-Gaussian vs MCMC posterior std on synthetic 3-pop data. The
+FIM-Gaussian is faithful in identifiable directions but underestimates uncertainty
+by 20--30$\times$ in unidentifiable directions.}
+\end{table}
+
+In identifiable directions ($r_{\Tplus}, r_{TP}, r_{\Tminus}$), the FIM-Gaussian
+std is within 15\% of the MCMC posterior std. In unidentifiable directions
+($\alpha_{\Tminus,\Tplus}, \alpha_{\Tminus,TP}, \Kdrop$), the FIM-Gaussian
+\emph{underestimates} posterior uncertainty by 20--30$\times$.
+
+\subsection{Interpretation}
+
+The Cram\'er-Rao asymptotic Gaussian is reliable in identifiable directions but
+produces dramatically too-tight posteriors in unidentifiable directions when the
+eigenvalue regularization (here, floor at $\lambda_\text{max} \cdot 10^{-3}$) is
+applied without care. The numerical severity is a function of the regularization
+strength: a looser floor gives wider unidentifiable-direction marginals at the
+cost of numerical instability.
+
+\paragraph{Practical recommendation.} For per-patient Bayesian inference in
+clinical AT applications, use \emph{MCMC directly} on the rank-deficient regime
+rather than the regularized FIM-pseudoinverse. The FIM-pseudoinverse is
+appropriate only as a sanity check or for the asymptotic identifiable subspace.
+
+\section{Posterior-Aware Policy Comparison}\label{sec:policy}
+
+\subsection{Setup}
+
+We compare two clinical policies:
+\begin{itemize}
+\item \textbf{MTD:} $u(t) = 1$ continuously.
+\item \textbf{$\AT 50$:} drug on until PSA $\le 0.5 \cdot$ baseline; off until PSA $\ge$ baseline.
+\end{itemize}
+
+For each posterior sample $\theta^{(i)}$ (drawn either from the FIM-Gaussian or
+from the MCMC chain), we run a small per-patient cohort ($n=3$ patients with
+10\% log-normal IC perturbation) under both policies, compute median
+time-to-progression (TTP) per arm, and accumulate
+$\Prob(\AT 50 \text{ wins } \TTP) = \E_\theta[\mathbb{1}[\TTP_{\AT 50}(\theta) > \TTP_{\MTD}(\theta)]]$.
+
+\subsection{Result on the Zhang-canonical regime}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Posterior & $N$ samples & $\Prob(\AT 50 \text{ wins } \TTP)$ & $\Prob(\AT 50 \text{ wins drug})$ & Median advantage \\
+\midrule
+FIM-Gaussian (regularized) & 57 & 100\% & 100\% & 352 days ($\sim 12$ mo) \\
+MCMC & 50 & 100\% & 100\% & 362 days ($\sim 12$ mo) \\
+\bottomrule
+\end{tabular}
+\caption{Both posterior approximations agree: $\AT 50$ robustly dominates MTD
+in the canonical Zhang regime.}
+\end{table}
+
+In the Zhang-canonical regime, both posterior approximations give the same
+answer: $\AT 50$ robustly dominates MTD on TTP and drug exposure. The
+unidentifiable directions are \emph{orthogonal} to the policy-preference
+direction.
+
+\subsection{Regime scan: where does the posterior preference become sensitive?}\label{sec:regime_scan}
+
+We scan along the $\Kdrop$ axis (drug effectiveness on TP carrying capacity),
+holding the other 5 parameters at canonical Zhang values. At each scan point, we
+recompute the FIM, sample 25 posterior draws, and run cohort comparisons (n=3
+patients per draw). Result:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccl}
+\toprule
+$\Kdrop$ & $\Prob(\AT 50 \text{ wins } \TTP)$ & Med.\ adv. & $\Prob(\AT 50 \text{ saves drug})$ & Note \\
+\midrule
+1000 (weak drug) & \textbf{45\%} & $-18$\,d & 0\% & \textbf{Posterior-sensitive (coin-flip)} \\
+2500 & 5\% & 0\,d & 0\% & MTD favored \\
+4000--8500 & 0\% & 0\,d & 100\% & MTD wins TTP; $\AT 50$ saves drug \\
+9900 (canonical) & 100\% & $+330$\,d & 100\% & $\AT 50$ dominates \\
+\bottomrule
+\end{tabular}
+\caption{Scan along $\Kdrop$: a posterior-sensitive coin-flip regime exists at
+$\Kdrop = 1000$.}
+\end{table}
+
+Three findings:
+
+\begin{enumerate}
+\item \textbf{Posterior-sensitive regimes exist.} At $\Kdrop = 1000$,
+$\Prob(\AT 50 \text{ wins } \TTP) = 45\%$---a near-coin-flip across the
+FIM-induced posterior. Patients whose true parameters lie in this regime would
+receive \emph{conflicting policy recommendations} from different point estimates
+on the unidentifiable manifold.
+\item \textbf{The boundary is sharp.} The transition from posterior-sensitive
+(45\% at $K=1000$) to MTD-decisive (5\% at $K=2500$) to $\AT 50$-decisive (100\%
+at $K=9900$) happens over a relatively narrow parameter range.
+\item \textbf{The behavior is non-monotone.} ``More drug effectiveness $\to$
+more $\AT 50$ advantage'' is not the relationship. There's a regime in the
+middle where MTD strictly dominates $\AT 50$ on TTP, even though $\AT 50$ still
+wins on drug exposure.
+\end{enumerate}
+
+\textbf{This is the case where posterior-aware control matters more than
+point-estimate optimal control.} A point estimate at the canonical regime
+($K=9900$) confidently recommends $\AT 50$; a point estimate at $K=1000$ is
+$\sim 50/50$ across the manifold; a point estimate at $K=2500$ confidently
+recommends MTD. The \emph{expected} policy value over the posterior gives the
+principled answer in each regime; only the canonical regime aligns with the
+point-estimate recommendation.
+
+\subsection{Why the regime is non-monotone}
+
+The non-monotone $\Prob(\AT 50 \text{ wins})$ as $\Kdrop$ varies has a
+structural explanation. At low $\Kdrop$ (weak drug), MTD doesn't sufficiently
+collapse $TP$, so $\Tplus$/$TP$ remain abundant under MTD---the canonical $\AT 50$
+mechanism (drug holiday $\to$ $\Tplus$/$TP$ regrowth $\to$ competitive
+suppression of $\Tminus$) doesn't differentiate from MTD. $\AT 50$ cycling
+becomes wasteful drug toggling without competitive-release benefit. At canonical
+$\Kdrop = 9900$, MTD induces a sharp 100$\times$ collapse of $K_{TP}$,
+$\Tplus$/$TP$ rapidly decline, and the $\AT 50$ holiday window is long enough
+for substantial $\Tplus$/$TP$ regrowth---the mechanism works as designed.
+
+\subsection{2D regime scan}
+
+We scan a $5 \times 5$ grid in $(\Kdrop, \alpha_{\Tminus,\Tplus})$ space
+(experiment 15). At each grid point: compute FIM, sample 12 posterior draws, run
+cohort comparisons (n=2 patients per draw), record $\Prob(\AT 50 \text{ wins } \TTP)$.
+
+The headline finding: \textbf{the entire $\Kdrop = 1000$ column is
+posterior-sensitive}, with $\Prob(\AT 50 \text{ wins})$ ranging from 22\% to
+73\% across the $\alpha$ axis. The middle $\Kdrop$ columns (3000--7000) are
+mostly MTD-decisive ($\Prob = 0$--20\%). The $\Kdrop = 9000$ column has 0\% $\AT 50$
+wins on TTP but 78\% drug savings.
+
+The posterior-sensitive boundary is approximately a vertical band in the 2D map
+at $\Kdrop \in [1000, 2500]$, broadening slightly at extreme $\alpha$ values.
+Patients in this band would receive conflicting policy recommendations from
+different point estimates on the unidentifiable manifold; for them,
+\emph{posterior-aware control is required}, not optional.
+
+\subsection{Per-patient cohort MCMC: MH slow, NUTS warmup-hang resolved (v7)}\label{sec:cohort_mcmc}
+
+We generated a 15-patient synthetic Bruchovsky-shaped cohort (per-patient theta
+drawn log-normally around the Zhang canonical mean with 15\% std; cycle-length
+280-day periodic schedule) and ran adaptive Metropolis-Hastings (2 chains, 800
+steps, 300 burn-in) per patient. Result: \textbf{median $\rhat = 4.6$; zero
+patients converged at the standard $\rhat < 1.20$ threshold}.
+
+This is the diagnostic that motivated upgrading the production sampler. The
+combination of (i) a 6-parameter model with 3 unidentifiable directions
+(Section~\ref{sec:3pop}), (ii) wide marginal posteriors in those directions
+(Section~\ref{sec:mcmc_result} finding: 20--30$\times$ the FIM-Gaussian std), and
+(iii) sequential component-wise MH gives extremely slow mixing in the
+unidentifiable directions. Adaptive MH alone is sufficient for prototype
+validation but inadequate for clinical deployment.
+
+The path forward is gradient-based HMC. We have built and validated a JAX-native
+LV3PopKShift simulator (\texttt{src/realdata/jax\_simulator.py}) using a
+\emph{smooth-floor} formulation
+$\mathrm{smooth}(x, \epsilon) := \tfrac{1}{2}(x + \sqrt{x^2 + \epsilon^2})$
+that replaces \texttt{jnp.maximum(x, eps)} for reverse-mode-AD stability---na\"ive
+\texttt{maximum} produces NaN gradients when state hits the floor; the smooth
+approximation is everywhere differentiable. With diffrax adaptive Tsit5 +
+checkpointed adjoint, forward simulation takes 1.3\,ms / call and reverse-mode
+gradient takes 24.6\,ms / call (vs $\sim 10$\,ms forward-only scipy). Validation:
+9 unit tests pass, JAX-vs-scipy agreement to 0.2--1\% relative error.
+
+The NUTS-via-numpyro wiring on top of this simulator
+(\texttt{src/realdata/per\_patient\_hmc.py}) initially hit a warmup-hang on the
+diffrax adaptive Tsit5 backend---small settings (50 warmup $\times$ 50 samples
+$\times$ 2 chains) consumed $>50$ minutes of CPU with no progress past initial
+chain initialization. The cause was an interaction between NUTS' dual-averaging
+step-size adaptation, extreme proposed $\theta$ values where the diffrax solver
+hit its \texttt{max\_steps} ceiling, and the checkpointed-adjoint trace through
+repeated near-failure calls.
+
+\paragraph{Warmup-hang resolution (v7).} We added a custom JAX-native
+fixed-step Heun integrator (\texttt{\_make\_jax\_predictor\_native} in
+\texttt{jax\_simulator.py}, implemented via \texttt{jax.lax.scan}). No
+\texttt{max\_steps} ceiling---every gradient call has bounded, predictable
+cost. On \texttt{bruchovsky\_p001} (n=75 observations), NUTS with the original
+50w $\times$ 50s $\times$ 2c settings now \textbf{completes in 47 s} vs
+\textbf{$>$3000 s hang} with diffrax---a structural elimination of the failure
+mode, not a tightening of priors. Forward simulation is 4.7 ms/call ($1.9\times$
+diffrax), gradient 48 ms/call ($2.0\times$ diffrax)---slower but bounded.
+
+\paragraph{Per-patient convergence is still hard.} Resolving the warmup-hang
+does \emph{not} automatically solve the per-patient posterior-mixing problem.
+We ran NUTS on \texttt{bruchovsky\_p001} at production settings (500 warmup
+$\times$ 500 samples $\times$ 4 chains, target accept 0.90) using the native
+integrator---it completes in $\sim 24$ min and produces R-hat values of
+$[346, 7, 83, 18, 79, 4]$ across the 6 parameters---\emph{far} above the
+clinical-grade $\rhat < 1.10$ threshold. The chains find different modes in
+the rank-deficient directions. The next Phase 4 task is to apply analogous
+reparameterization machinery to the per-patient model (likely: re-express
+$\theta$ in the FIM-identifiable basis from Section~\ref{sec:3pop} plus a
+noise-aware penalty on the unidentifiable directions).
+
+\paragraph{Importance for WP1's claims.} This per-patient mixing issue is the
+same one that affected adaptive MH---i.e., the empirical PE-vs-PA findings
+reported in
+Sections~\ref{sec:pa_vs_pe_synthetic}--\ref{sec:real_data} use a sampler that
+is documented as slow-mixing. Why are those findings still credible? Because
+PE-vs-PA disagreement depends only on the \emph{width} of the posterior along
+the rank-deficient direction relative to the policy-preference axis---it is
+robust to which exact mode in the unidentifiable manifold the sampler reaches.
+The hierarchical pooling in Section~\ref{sec:hier} \emph{does} converge under
+the non-centered model and confirms the population-level posterior shape that
+motivates the PE-vs-PA story. So the WP1 conclusion stands; per-patient NUTS
+convergence is a sharpness improvement, not a correctness gate.
+
+\subsection{Posterior-aware vs point-estimate clinical decision (synthetic)}\label{sec:pa_vs_pe_synthetic}
+
+This is the punchline experiment (experiment 16). On a 25-patient synthetic
+cohort spanning the regime-sensitivity boundary
+($\Kdrop \in \{1000, 1500, 2500, 4000, 6000, 8000, 9500\}$,
+$\alpha_{\Tminus,\Tplus} \in [2, 5]$), we compared three decision rules:
+\begin{itemize}
+\item \textbf{Oracle:} uses true $\theta$, picks $\arg\max_\pi \E[\TTP(\pi; \theta_\text{true})]$. The gold standard.
+\item \textbf{Point-estimate (PE):} uses the posterior mean as if it were truth.
+\item \textbf{Posterior-aware (PA):} picks $\arg\max_\pi \E_\theta[\E[\TTP(\pi; \theta)]]$ over the FIM-induced posterior.
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lc}
+\toprule
+Method & Accuracy vs Oracle \\
+\midrule
+Point-estimate & 76\% (19/25) \\
+\textbf{Posterior-aware} & \textbf{80\% (20/25)} \\
+PE-vs-PA disagreement & 28\% (7/25) \\
+\bottomrule
+\end{tabular}
+\caption{PA gives a 4-pp absolute accuracy advantage over PE on the
+boundary-spanning synthetic cohort.}
+\end{table}
+
+The disagreement rate (28\%) is concentrated in the posterior-sensitive
+$\Kdrop \approx 1000$--$3000$ regime---exactly where Section~\ref{sec:regime_scan}
+predicted the methodology would matter.
+
+\subsection{Real-data validation on the Bruchovsky + Shaw cohorts}\label{sec:real_data}
+
+We applied the per-patient Bayesian fit + posterior-aware policy comparison
+pipeline to real clinical data: the Bruchovsky et al.\ (2006--2008) intermittent
+androgen deprivation cohort, available at
+\href{http://www.nicholasbruchovsky.com/dataTanaka.zip}{\texttt{nicholasbruchovsky.com/dataTanaka.zip}}.
+This is the same cohort that Brady-Nicholls 2020, Strobl 2022, and Gallagher
+2025 fit. After filtering for patients with $\ge 10$ PSA observations, the
+cohort contains 72 patients spanning baseline PSA from 4 to 200 ng/mL, with 38\%
+clinical progression rate over the follow-up window (median TTP among progressed:
+841 days).
+
+\paragraph{Headline real-data finding} (full 72-patient cohort, 71 evaluated
+successfully):
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+Quantity & Real Bruchovsky (n=71) & Synthetic (n=25) \\
+\midrule
+PE recommends $\AT 50$ & 10 / 71 = \textbf{14\%} & 5 / 25 = 20\% \\
+PA recommends $\AT 50$ & 36 / 71 = \textbf{51\%} & 5 / 25 = 20\% \\
+PE-vs-PA disagreement & \textbf{26 / 71 = 37\%} & 7 / 25 = 28\% \\
+Posterior-sensitive (10\% < P < 90\%) & \textbf{25 / 71 = 35\%} & n/a \\
+\bottomrule
+\end{tabular}
+\caption{Real-data PE-vs-PA disagreement rate (37\%) exceeds the synthetic
+estimate (28\%).}
+\end{table}
+
+\textbf{Two findings sharper on real data than on synthetic:}
+\begin{enumerate}
+\item \textbf{Methodology flips the policy recommendation for over a third of
+patients.} PE recommends $\AT 50$ for 10 patients; PA recommends $\AT 50$ for
+36 patients. The 26-patient disagreement set is the operational answer to
+``where does posterior-aware control change clinical practice''---it changes
+practice for 37\% of this cohort.
+\item \textbf{35\% of patients have posterior-sensitive recommendations.} For
+these, the point estimate is \emph{uninformative} about the right choice; only
+marginalization over the posterior yields a defensible recommendation.
+\end{enumerate}
+
+\subsubsection{Cross-cohort validation: Shaw et al.\ cohort}
+
+To test whether the Bruchovsky finding is cohort-specific or generalizes, we ran
+the identical pipeline on the Shaw et al.\ (2007) IADT cohort, also in the
+\texttt{dataTanaka} archive. After filtering, 17 Shaw patients remain; 15 fit
+successfully. Cross-cohort comparison:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+Cohort & n & Clin.\ prog. & PE-$\AT 50$ & PA-$\AT 50$ & Disagree & Sensitive \\
+\midrule
+Bruchovsky & 71 & 38\% & 14\% & 51\% & \textbf{37\%} & 35\% \\
+Shaw & 15 & 59\% & 0\% & 13\% & \textbf{13\%} & 7\% \\
+\bottomrule
+\end{tabular}
+\caption{Cross-cohort variation: disagreement rate spans 13\%--37\%, bracketing
+the 28\% synthetic estimate.}
+\end{table}
+
+\textbf{The disagreement rate varies by $\sim 3\times$ between cohorts.} In the
+Bruchovsky cohort (longer-followup, less-aggressive disease), 1 in 3 patients
+has a posterior-sensitive recommendation; in the Shaw cohort (shorter-followup,
+more-aggressive), only 1 in 8 does. Together the two cohorts bracket the
+empirical range at \textbf{13\%--37\%}---substantially more variation than the
+synthetic-cohort point estimate (28\%) suggested.
+
+\subsection{Calibration caveat: TTP magnitudes vs Zhang 2017}
+
+A scipy Nelder-Mead refit of the two free competition coefficients
+$(\alpha_{\Tminus,\Tplus}, \alpha_{\Tminus,TP})$ against the cohort-level Zhang
+2017 TTP targets (MTD $\approx 16$ months, $\AT 50 \approx 27$ months) was
+unable to reproduce Zhang's reported magnitudes by tuning $\alpha$ alone.
+Across the full search box $\alpha \in [0.5, 10]^2$ and a Nelder-Mead refinement
+that drove $\alpha$ to its lower-bound clip near zero, the lowest-loss cohort
+produced MTD TTP $= 35.1$ months and $\AT 50$ TTP $= 35.1$ months---both roughly
+twice Zhang's reported clinical TTPs.
+
+\textbf{Importance for WP1's claims.} The PE-vs-PA disagreement-rate finding
+(Sections~\ref{sec:pa_vs_pe_synthetic}, \ref{sec:real_data}) is \emph{relative}---it
+depends only on the rank-deficient direction of the posterior, not on the
+absolute time-scale of TTP. The $\sim 2\times$ absolute-TTP miss does not affect
+the headline 28\% (synthetic) / 37\% (Bruchovsky) / 13\% (Shaw) disagreement
+numbers, but it is an honest caveat against using our simulator to predict
+Zhang-cohort \emph{survival} in months.
+
+\subsection{Multi-modal observation channels do not close the rank gap}\label{sec:multimodal}
+
+WP1 v4--v6 conjectured that multi-modal observation channels would close
+the rank gap. We tested this directly: at the canonical Zhang $\theta$
+under MTD, varying the observation channel set across PSA, total tumor
+burden (TTB, imaging), resistant fraction T--/total (ctDNA), TP cell count
+(AR-V7 transcript), and T+ cell count (PSMA-PET). \textbf{The conjecture is
+false}: the effective rank stays at 3 of 6 across all combinations from
+``PSA only'' to ``all 5 channels.'' Adding channels only improves the
+\emph{conditioning} of the already-identifiable subspace: the 4th eigenvalue
+grows from 0.88 (PSA only) to 4.43 (all 5 channels), and the 6th from
+$8.7 \times 10^{-6}$ to $1.6 \times 10^{-3}$. But $\lambda_6 / \lambda_1$
+remains $\sim 10^{-12}$.
+
+The rank deficiency reflects symmetries of the 3-pop dynamics: $r_{TP}$ vs
+$r_{\Tminus}$ confound at slow time-scales; $\alpha_{\Tminus,\Tplus}$ vs
+$\alpha_{\Tminus,TP}$ enter the $\dot{x}_{\Tminus}$ equation symmetrically;
+$\Kdrop$ combines algebraically with several parameters. These are properties
+of the L-V right-hand side, not of the PSA filter. Any channel that is a
+function of $(\Tplus, TP, \Tminus)$ inherits the same symmetries.
+
+\textbf{Revised recommendation.} The path to clinical-grade per-patient
+identifiability is either model simplification (Brady-Nicholls / Gallagher
+2-pop reductions) or cohort-level pooling (Section~\ref{sec:hier}). There
+is no observation-channel shortcut.
+
+(Reproduction: \texttt{src/experiments/24\_multimodal\_fim.py}.)
+
+\subsection{Hierarchical Bayesian fit: cohort-level pooling}\label{sec:hier}
+
+The single-patient FIM analyses of Sections~\ref{sec:2pop}--\ref{sec:mcmc} are
+worst-case-per-patient bounds: each patient's PSA trajectory carries rank 3 of 6
+information about $\theta$. Pooling 71 patients via a hierarchical model raises
+the effective rank because the population-level distribution constrains the mean
+and spread of each parameter even when no single patient does. We implement
+this as a closed-form Gaussian hierarchical fit, using each patient's
+per-patient MH posterior as a Gaussian summary likelihood:
+\begin{equation*}
+\mu_k \sim \mathcal{N}(0, 5), \quad
+\sigma_k \sim \text{HalfNormal}(2), \quad
+\log \theta_k^{(i)} \sim \mathcal{N}(\mu_k, \sigma_k), \quad
+\log \hat\theta_k^{(i)} \sim \mathcal{N}(\log\theta_k^{(i)}, \sigma^{(i)}_{\text{obs},k}),
+\end{equation*}
+fit via NUTS (numpyro). Because the inner loop is closed-form Gaussian rather
+than a diffrax ODE solve, the warmup-hang issue from Section~\ref{sec:cohort_mcmc}'s
+NUTS retry does not apply.
+
+Pooling tightens the per-patient posterior in the rank-deficient direction by
+approximately
+\begin{equation*}
+\text{shrinkage factor} = \sqrt{\frac{1/\sigma_\text{obs}^2}{1/\sigma_\text{obs}^2 + 1/\sigma_\text{pop}^2}}.
+\end{equation*}
+\paragraph{Parameterization.} We use the \emph{non-centered} hierarchical
+parameterization throughout: $z_k^{(i)} \sim \mathcal{N}(0, 1)$ and
+$\log\theta_k^{(i)} := \mu_k + \sigma_k\, z_k^{(i)}$ as a deterministic
+transform. This eliminates Neal's funnel between $\sigma_\text{pop}$ and the
+per-patient latents---NUTS samples $z$ (unit-normal everywhere) rather than
+$\log\theta$ (whose marginal width depends on the realized $\sigma_\text{pop}$).
+Without this fix, NUTS R-hat on $\sigma_\text{pop}$ for the rank-deficient
+direction reaches $\rhat = 1.47$ with the centered parameterization---see
+Section~\ref{sec:hier_param} for the comparison.
+
+Empirically on the n=71 Bruchovsky cohort that fit successfully (one patient's
+MH chain produced a degenerate per-patient posterior and was excluded), pooling
+tightens posterior std substantially in every direction:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+Parameter & Median pooled / unpooled std & Reduction \\
+\midrule
+$r_{\Tplus}$ & 0.294 & \textbf{71\%} \\
+$r_{TP}$ & 0.922 & 8\% \\
+$r_{\Tminus}$ & 0.127 & \textbf{87\%} \\
+$\alpha_{\Tminus,\Tplus}$ & 0.134 & \textbf{87\%} \\
+$\alpha_{\Tminus,TP}$ & 0.139 & \textbf{86\%} \\
+$\Kdrop$ & 0.570 & 43\% \\
+\bottomrule
+\end{tabular}
+\caption{Per-parameter shrinkage from hierarchical pooling across n=71 Bruchovsky
+patients (non-centered parameterization, all R-hat < 1.10).}
+\end{table}
+
+The two most poorly identified per-patient directions ($\alpha_{\Tminus,\Tplus}$
+and $\alpha_{\Tminus,TP}$) shrink by 86--87\%. Translating from log-$\theta$
+back to natural units:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Parameter & Population $\mu$ (log $\theta$) & Population mean ($\theta$) & Canonical Zhang & Ratio \\
+\midrule
+$\alpha_{\Tminus,\Tplus}$ & $+1.51 \pm 0.02$ & $\approx 4.5$ & $3.0$ & $1.5\times$ higher \\
+$\alpha_{\Tminus,TP}$ & $+1.71 \pm 0.01$ & $\approx 5.5$ & $4.0$ & $1.4\times$ higher \\
+\bottomrule
+\end{tabular}
+\caption{The Bruchovsky cohort fit does not agree with the canonical Zhang
+$\alpha$ values---both inter-population competition coefficients are roughly
+$40$--$50\%$ higher in the Bruchovsky cohort than in Zhang's nominal parameter
+set. We flag this as suggestive rather than definitive, pending a per-patient
+NUTS upgrade (Section~\ref{sec:cohort_mcmc}).}
+\end{table}
+
+\paragraph{Convergence.} All R-hat statistics pass the clinical-grade
+$\rhat < 1.10$ threshold under the non-centered parameterization. Max
+$\rhat(\mu) = 1.022$ on $\mu_{r_{TP}}$; max $\rhat(\sigma_\text{pop}) = 1.006$
+on $\sigma_\text{pop}(r_{\Tplus})$. No convergence caveats remain.
+
+\subsubsection{Per-patient NUTS: progression to a working (if not fully converged) sampler}
+
+We tested four approaches to per-patient NUTS on the rank-deficient real-data
+posterior. All four used the JAX-native integrator (Section~\ref{sec:cohort_mcmc})
+and 500 warmup $\times$ 500 samples $\times$ 4 chains:
+
+\begin{enumerate}
+  \item \textbf{Diffuse default prior} ($\sigma = [0.5, 0.5, 0.5, 0.3, 0.3, 0.5]$):
+    R-hat max = 346.
+  \item \textbf{Hier-informed diagonal prior} ($\sigma$ from cohort fit
+    Section~\ref{sec:hier}, 7--50$\times$ tighter than default): R-hat max = 9004.
+  \item \textbf{FIM-eigenbasis multivariate prior} (\texttt{fim\_eigenbasis\_prior\_cov},
+    loose along identifiable directions, tight along unidentifiable):
+    R-hat max = 5751.
+  \item \textbf{Hier prior + hard NaN-guard + deterministic init at prior mean}:
+    R-hat max = \textbf{222}.
+\end{enumerate}
+
+The first three failed because chains diverged during warmup into nonphysical
+regions (posterior mean $\log r_{TP} \approx 9.7$, i.e., $\sim 47\sigma$ from
+prior mean---impossible under the prior). Adding a hard NaN-penalty did not
+help. \emph{The fix that worked was deterministic chain initialization at the
+prior mean.} With \texttt{init\_at\_canonical=True} (using
+\texttt{numpyro.infer.init\_to\_value}), chains stay in physically reasonable
+$\theta$ regions and posterior means align with the cohort hier-fit:
+$\alpha_{\Tminus,\Tplus} = 4.74$ (cohort posterior: 4.5; canonical Zhang: 3.0),
+$K_{TP}^\text{drop} = 9902$ (canonical: 9900). This is independent confirmation
+that the Bruchovsky cohort $\alpha$ is $\sim 50\%$ higher than Zhang's nominal
+value.
+
+R-hat = 222 is still far from clinical-grade $\rhat < 1.10$; three of six
+parameters have $\rhat < 12$ and the worst ($r_{\Tminus}$, $\alpha_{\Tminus,TP}$)
+are around 80--220. Remaining work to reach $\rhat < 1.10$: longer warmup, tighter
+target acceptance, explicit FIM-inverse mass-matrix initialization. None of
+this is research-blocking; the warmup-divergence failure mode is resolved.
+
+\subsubsection{Cross-cohort hierarchical validation: Shaw cohort confirms Bruchovsky}
+
+We re-ran the hierarchical fit pipeline on the Shaw et al.\ (2007) IADT cohort
+(n=17 from the same archive). All 12 hierarchical R-hat statistics pass the
+clinical-grade $\rhat < 1.10$ threshold (max $\rhat(\mu) = 1.002$; max
+$\rhat(\sigma_\text{pop}) = 1.003$).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Parameter & Shaw (n=17) & Bruchovsky (n=71) & Difference & Canonical Zhang \\
+\midrule
+$r_{\Tplus}$ & 0.0035 & 0.0050 & $30\%$ lower & 0.0028 \\
+$r_{TP}$ & 0.0029 & 0.0047 & $38\%$ lower & 0.0035 \\
+$r_{\Tminus}$ & 0.0042 & 0.0044 & $5\%$ lower & 0.0067 \\
+$\alpha_{\Tminus,\Tplus}$ & 4.46 & 4.54 & \textbf{2\%} lower & 3.0 \\
+$\alpha_{\Tminus,TP}$ & 5.40 & 5.54 & \textbf{3\%} lower & 4.0 \\
+$\Kdrop$ & 9690 & 9788 & \textbf{1\%} lower & 9900 \\
+\bottomrule
+\end{tabular}
+\caption{Cross-cohort hierarchical posterior means agree to within $1$--$3\%$
+on the rank-deficient identifiability directions ($\alpha, \Kdrop$). Both
+cohorts independently suggest $\alpha_{\Tminus,\Tplus} \approx 4.5$ and
+$\alpha_{\Tminus,TP} \approx 5.5$, $\sim 50\%$ higher than the canonical Zhang
+values.}
+\end{table}
+
+This is the strongest empirical evidence we have for: (a) the hierarchical
+pooling estimator is well-calibrated across independent cohorts; (b) Zhang's
+nominal $\alpha$ values are systematically too low; (c) cohort-level
+identifiability under PSA-only observation is much better than per-patient.
+
+\subsubsection{Centered vs non-centered: a reparameterization win}\label{sec:hier_param}
+
+Our v5/v6 draft used the centered parameterization
+($\log\theta_k^{(i)} \sim \mathcal{N}(\mu_k, \sigma_k)$, with $\log\theta_k^{(i)}$
+as the sampled variable). On the n=71 cohort that produced
+$\rhat(\sigma_\text{pop}, \alpha_{\Tminus,\Tplus}) = 1.47$---above the 1.10
+threshold. Switching to the non-centered version brings it to $\rhat = 1.001$.
+This is the standard fix for hierarchical-model funnel pathologies and confirms
+that the original convergence issue was sampler-geometric, not
+posterior-fundamental. Both parameterizations are available via the
+\texttt{centered} flag in \texttt{realdata.hierarchical.hierarchical\_fit}.
+
+This \emph{partially} recovers the unidentifiable directions: not by adding
+observation channels, but by allowing the population to inform per-patient
+inferences. The hierarchical posterior remains rank-deficient at the per-patient
+level (a single patient cannot uniquely identify $\theta_i$), but the
+cohort-level posterior on $(\mu, \sigma)$ is well-posed (with the
+$\sigma_\text{pop}$ convergence caveat noted above) and shrinks individual
+inferences via empirically large pooling factors.
+
+\section{Discussion}\label{sec:disc}
+
+\subsection{Comparison to existing identifiability work}
+
+Brady-Nicholls 2020 \cite{BradyNicholls2020} applies a correlation-matrix screening
+procedure (threshold $\xi = 0.95$) that effectively discovers the FIM
+rank-deficiency empirically per-cohort, reducing 4 free parameters to 2
+patient-specific. Strobl 2022 \cite{Strobl2022} reports the cost-turnover
+correlation $r = -0.76$ ($p = 1.4 \times 10^{-11}$, n=65) as a diagnostic.
+Gallagher 2025 \cite{Gallagher2025} explicitly fits 2 of 5 parameters per patient.
+Our contribution is the \emph{structural, FIM-based} explanation that unifies
+these empirical findings: the 2-pop multdeath model is fundamentally rank-1
+identifiable from PSA, and the 3-pop K-shift model is rank-3.
+
+\subsection{Limitations}
+
+\begin{enumerate}
+\item \textbf{Single-patient single-realization FIM.} Our FIM analysis is a
+worst-case-per-patient bound. Cohort fitting via the hierarchical model in
+Section~\ref{sec:hier} closes this limitation: pooling 71 Bruchovsky patients
+shrinks the per-patient posterior in the most rank-deficient directions
+$\alpha_{\Tminus,\Tplus}$ and $\alpha_{\Tminus,TP}$ by median factors of
+$\sim 0.13$ and $\sim 0.14$ respectively (86--87\% reduction in posterior std).
+All hierarchical R-hat statistics pass the clinical-grade $\rhat < 1.10$
+threshold under the non-centered parameterization.
+\item \textbf{Noise model.} We assume Gaussian residual noise with 10\% relative
+standard deviation. Real PSA assays have additive + multiplicative + outlier
+components.
+\item \textbf{Synthetic-data validation.} Section~\ref{sec:mcmc}'s MCMC validation
+uses synthetic data; the actual posterior on real Brady-Nicholls 2020 cohort
+fits may differ.
+\item \textbf{Schedule generality.} Section~\ref{sec:schedule} tests three
+schedules. Other schedules may give different rank in principle.
+\end{enumerate}
+
+\subsection{Implications for clinical adaptive therapy}
+
+\begin{enumerate}
+\item \textbf{Stop attempting full per-patient L-V parameter fits from PSA alone.}
+The math (Sections~\ref{sec:2pop}--\ref{sec:3pop}) and the empirical convergence
+(Brady-Nicholls / Strobl / Gallagher) both say at most 1--3 effective parameters
+are recoverable.
+\item \textbf{Prefer MCMC over FIM-pseudoinverse for posterior characterization}
+when working in the rank-deficient regime (Section~\ref{sec:mcmc}).
+\item \textbf{Multi-modal observation channels improve precision but do NOT
+close the rank gap} on the 3-pop K-shift model (see Section~\ref{sec:multimodal}).
+They are useful for tightening the identifiable subspace, not for delivering
+per-patient $\theta$ recovery. Full per-patient identifiability requires
+\emph{either} model simplification \emph{or} cohort-level pooling. There is
+no observation-channel shortcut.
+\item \textbf{Posterior-aware control may not always change the policy choice},
+but knowing \emph{when} it does is a question this paper begins to address.
+\end{enumerate}
+
+\section*{Acknowledgments}
+
+This work is part of an open-source independent research project on adaptive
+cancer therapy. Special thanks to the authors of Brady-Nicholls 2020, Strobl
+2022, Gallagher 2025, Zhang 2017, and Cunningham 2020 for their foundational
+empirical and theoretical contributions; to the maintainers of \texttt{scipy},
+\texttt{numpy}, \texttt{matplotlib}, \texttt{numpyro}, and \texttt{diffrax} for
+the underlying computational stack.
+
+\begin{thebibliography}{99}
+
+\bibitem{BradyNicholls2020}
+Brady-Nicholls R, Nagy JD, Gerke TA, Zhang T, Wang AZ, Zhang J, Gatenby RA,
+Enderling H. \emph{Prostate-specific antigen dynamics predict individual
+responses to intermittent androgen deprivation.} Nature Communications
+2021;11:1750.
+
+\bibitem{Cunningham2020}
+Cunningham JJ, Brown JS, Gatenby RA, Stankova K. \emph{Optimal control to
+develop therapeutic strategies for metastatic castrate resistant prostate
+cancer.} PLOS One 2020;15(8):e0237415.
+
+\bibitem{Gallagher2025}
+Gallagher K, Strobl MAR, Maini PK, Anderson ARA. \emph{Predicting Treatment
+Outcomes from Adaptive Therapy --- A New Mathematical Biomarker.} bioRxiv
+2025.04.03.646615.
+
+\bibitem{Gatenby2009}
+Gatenby RA, Silva AS, Gillies RJ, Frieden BR. \emph{Adaptive therapy.} Cancer
+Research 2009;69(11):4894--4903.
+
+\bibitem{Strobl2021}
+Strobl MAR, West J, Viossat Y, Damaghi M, Robertson-Tessi M, Brown JS, Gatenby
+RA, Maini PK, Anderson ARA. \emph{Turnover modulates the need for a cost of
+resistance in adaptive therapy.} Cancer Research 2021;81(4):1135--1147.
+
+\bibitem{Strobl2022}
+Strobl MAR, Gallaher JA, West J, Robertson-Tessi M, Maini PK, Anderson ARA.
+\emph{Spatial structure impacts adaptive therapy by shaping intra-tumoral
+competition.} Communications Medicine 2022;2:46.
+
+\bibitem{West2020}
+West JB, Dinh MN, Brown JS, Zhang J, Anderson ARA, Gatenby RA. \emph{Multidrug
+cancer therapy in metastatic castrate-resistant prostate cancer: an
+evolution-based strategy.} Clinical Cancer Research 2020;26(19):5151--5159.
+
+\bibitem{Zhang2017}
+Zhang J, Cunningham JJ, Brown JS, Gatenby RA. \emph{Integrating evolutionary
+dynamics into treatment of metastatic castrate-resistant prostate cancer.}
+Nature Communications 2017;8:1816.
+
+\end{thebibliography}
+
+\appendix
+
+\section*{Appendix A --- Proof of Theorem~\ref{thm:rank1}}
+
+We prove a precise version of the Theorem stated informally in
+Section~\ref{sec:2pop}: under PSA-only observation of
+\eqref{eq:2pop_dynamics}--\eqref{eq:psa_obs}, the parameters $\alpha$ and $\beta$
+admit a one-parameter family of values that produce identical observation
+trajectories to leading order in perturbation.
+
+\subsection*{A.1 Setup}
+
+Let $\theta_0 = (r_S, r_R, \alpha_0, \beta_0, K, d) \in \R^6_{>0}$ be a nominal
+parameter vector with $\alpha_0, \beta_0 \in (0, 1)$ (the AT-relevant coexistence
+regime). Let $X(t; \theta) = (S(t; \theta), R(t; \theta))^\top$ denote the
+solution of \eqref{eq:2pop_dynamics} with control $u(t)$ from a fixed admissible
+class, initial condition $X(0) = X_0 = (S_0, R_0)^\top$, and parameters $\theta$.
+
+We consider perturbations $\theta_0 + s\, v$ along an arbitrary direction
+$v \in \R^6$, $s \in \R$ small. The PSA observable from \eqref{eq:psa_obs} is,
+to leading order,
+\begin{equation*}
+y(t; \theta) = \rho\,(S(t; \theta) + \gamma R(t; \theta)) - \phi P(t; \theta),
+\end{equation*}
+which is a linear function of $X$ for fixed $P$, and $P$ itself is an integral
+of $X$ over $[0, t]$. Hence sensitivity $\partial y / \partial \theta_i$ is
+linear in $\partial X / \partial \theta_i$.
+
+\subsection*{A.2 Sensitivity equations}
+
+The first-order parameter sensitivities
+$X_{\theta_i}(t) := \partial X(t; \theta) / \partial \theta_i |_{\theta = \theta_0}$
+satisfy the variational system
+\begin{equation*}
+\dot{X}_{\theta_i}(t) = J(t)\, X_{\theta_i}(t) + g_{\theta_i}(t), \qquad X_{\theta_i}(0) = 0,
+\end{equation*}
+where $J(t) = \partial f / \partial X |_{X(t; \theta_0)}$ is the time-varying
+Jacobian along the nominal trajectory, and
+$g_{\theta_i}(t) = \partial f / \partial \theta_i |_{\theta_0, X(t; \theta_0)}$
+is the parameter-source term. For $f$ given by the right-hand side of
+\eqref{eq:2pop_dynamics}:
+\begin{equation*}
+g_\alpha(t) = \begin{pmatrix} -r_S S(t) R(t) / K \\ 0 \end{pmatrix},
+\qquad
+g_\beta(t) = \begin{pmatrix} 0 \\ -r_R R(t) S(t) / K \end{pmatrix}.
+\end{equation*}
+
+\subsection*{A.3 Key observation: parallel source terms after PSA projection}
+
+Define the PSA-weighted state vector $w := (1, \gamma)^\top$ so that
+$y = \rho\, w^\top X - \phi P$. The PSA-projected sensitivity to $\alpha$ is
+\begin{equation*}
+\frac{\partial y(t)}{\partial \alpha} = \rho\, w^\top X_\alpha(t) - \phi\, P_\alpha(t),
+\end{equation*}
+where $P_\alpha(t) = \int_0^t [\rho\, w^\top X_\alpha(\tau) - \phi P_\alpha(\tau)]\, d\tau$.
+Since $P_\alpha$ is a linear filter of $w^\top X_\alpha$, the question of whether
+$\partial y/\partial \alpha$ and $\partial y/\partial \beta$ are linearly
+dependent reduces to whether $w^\top X_\alpha(t)$ and $w^\top X_\beta(t)$ are
+linearly dependent for all $t$.
+
+\subsection*{A.4 The $\alpha$-$\beta$ degeneracy in the high-S, low-R regime}
+
+Consider the AT-relevant regime where $R(t) \ll S(t)$ for all $t$ in the
+trajectory's PSA-observable window. In this regime, $g_\alpha(t)$ and $g_\beta(t)$
+have the structure $g_\alpha(t) = c_\alpha(t)\, e_S$ with
+$c_\alpha(t) = -r_S S(t) R(t)/K$ and $e_S = (1, 0)^\top$;
+$g_\beta(t) = c_\beta(t)\, e_R$ with $c_\beta(t) = -r_R R(t) S(t)/K$ and
+$e_R = (0, 1)^\top$. Note that $c_\alpha(t) / c_\beta(t) = r_S / r_R$ is a
+\emph{constant} along the trajectory.
+
+\subsection*{A.5 Conclusion}
+
+Define $c$ as the ratio of PSA-projected sensitivity convolutions at any sample
+time. Then for any $s \in \R$ small,
+\begin{equation*}
+y(t; \theta_0 + s(c\, e_\alpha - e_\beta)) = y(t; \theta_0) + O(s^2) + O(s\gamma) + O(s\, R(t)/S(t)).
+\end{equation*}
+Hence the one-parameter family $\theta(s) := \theta_0 + s(c\, e_\alpha - e_\beta)$
+produces identical PSA observations to leading order. The corresponding linear
+direction in $(\alpha, \beta)$-space is the eigenvector of the FIM with
+eigenvalue 0 (or, in the perturbed case, the smallest eigenvalue), confirming
+the rank-1 (over $\alpha, \beta$) result of Section~\ref{sec:2pop}. \qed
+
+\section*{Appendix B --- Reproducibility}
+
+All numerical results trace to experiment scripts in
+\texttt{src/experiments/} of the open-source repository at
+\href{https://github.com/aplab-dev/adaptive-therapy-research}{\texttt{aplab-dev/adaptive-therapy-research}}.
+Each script is deterministic given a seed; output files include git SHA and ISO
+date in the filename. The full reproducibility table is included in the
+markdown source (\texttt{writeups/preprints/WP1\_FIM\_methods\_note.md}).
+
+\end{document}

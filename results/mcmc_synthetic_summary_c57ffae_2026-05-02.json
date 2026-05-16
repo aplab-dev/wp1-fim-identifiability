@@ -1,0 +1,82 @@
+{
+  "experiment": "mcmc_synthetic_psa",
+  "git_sha": "c57ffae",
+  "date": "2026-05-02",
+  "model": "3-pop K-shift Zhang",
+  "param_names": [
+    "r_T+",
+    "r_TP",
+    "r_T-",
+    "\u03b1(T-,T+)",
+    "\u03b1(T-,TP)",
+    "K_TP_drop"
+  ],
+  "theta_true": [
+    0.0027726,
+    0.0034657,
+    0.0066542,
+    3.0,
+    4.0,
+    9900.0
+  ],
+  "mcmc": {
+    "method": "Adaptive component-wise Metropolis-Hastings",
+    "n_total_steps": 3000,
+    "burn_in": 1000,
+    "thin": 4,
+    "n_post_burnin_samples": 500,
+    "final_proposal_scale": [
+      0.0011010278505397516,
+      0.0006336238009089449,
+      0.000132182632435463,
+      0.007658818020863578,
+      0.00765881813157906,
+      0.007658818151983979
+    ],
+    "mcmc_mean": [
+      0.0027926693195874327,
+      0.0036510955261872644,
+      0.006673582418631707,
+      2.9107676917599083,
+      3.988532342908048,
+      9899.903513792753
+    ],
+    "mcmc_std": [
+      0.001704631699850659,
+      0.0007931737388926195,
+      7.844229998104047e-05,
+      0.033131509748041695,
+      0.0342260800094287,
+      0.04850702860482147
+    ]
+  },
+  "fim_gaussian_std": [
+    0.0014812146989045274,
+    0.0007245529293093665,
+    7.687888271288126e-05,
+    0.0016369156486180578,
+    0.001636915672281227,
+    0.0016369156766423611
+  ],
+  "std_ratio_mcmc_over_fim": [
+    1.1508336374945278,
+    1.0947077940167345,
+    1.0203361080831272,
+    20.24020588721996,
+    20.90888406104072,
+    29.633187156175943
+  ],
+  "policy_comparison": {
+    "n_subsample": 50,
+    "n_patients_per": 3,
+    "p_at50_wins_ttp": 1.0,
+    "p_at50_wins_drug": 1.0,
+    "median_advantage_d": 361.655172413793
+  },
+  "interpretation_notes": [
+    "If MCMC std / FIM std is close to 1 across all parameters, the FIM-Gaussian is a faithful surrogate for the actual posterior in this regime.",
+    "If the ratio is much greater than 1, the actual posterior has heavier tails and/or non-Gaussian structure that the FIM misses.",
+    "If the ratio is much less than 1 in identifiable directions, the FIM regularization (1e-3 floor on eigenvalues) is too generous.",
+    "Phase 3 \u00a73.3 production version: replace MCMC starting point at theta_true with a more realistic initialization (e.g., least-squares ML estimate); validate that MCMC reaches the same mode."
+  ]
+}

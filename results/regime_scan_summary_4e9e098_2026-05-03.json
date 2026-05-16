@@ -1,0 +1,110 @@
+{
+  "experiment": "regime_scan_K_TP_drop",
+  "git_sha": "4e9e098",
+  "date": "2026-05-03",
+  "scanned_axis": "K_TP_drop",
+  "K_TP_drop_grid": [
+    1000.0,
+    2500.0,
+    4000.0,
+    5500.0,
+    7000.0,
+    8500.0,
+    9900.0
+  ],
+  "n_posterior": 25,
+  "n_patients_per_draw": 3,
+  "results": [
+    {
+      "n_completed": 22,
+      "p_at50_wins_ttp": 0.45454545454545453,
+      "p_at50_wins_drug": 0.0,
+      "median_advantage_d": -17.86206896551721,
+      "iqr_advantage": [
+        -74.10344827586212,
+        177.65517241379317
+      ],
+      "median_drug_savings": 0.0,
+      "K_TP_drop": 1000.0
+    },
+    {
+      "n_completed": 21,
+      "p_at50_wins_ttp": 0.047619047619047616,
+      "p_at50_wins_drug": 0.0,
+      "median_advantage_d": 0.0,
+      "iqr_advantage": [
+        0.0,
+        0.0
+      ],
+      "median_drug_savings": 0.0,
+      "K_TP_drop": 2500.0
+    },
+    {
+      "n_completed": 17,
+      "p_at50_wins_ttp": 0.0,
+      "p_at50_wins_drug": 0.0,
+      "median_advantage_d": 0.0,
+      "iqr_advantage": [
+        0.0,
+        0.0
+      ],
+      "median_drug_savings": 0.0,
+      "K_TP_drop": 4000.0
+    },
+    {
+      "n_completed": 17,
+      "p_at50_wins_ttp": 0.0,
+      "p_at50_wins_drug": 0.0,
+      "median_advantage_d": 0.0,
+      "iqr_advantage": [
+        0.0,
+        0.0
+      ],
+      "median_drug_savings": 0.0,
+      "K_TP_drop": 5500.0
+    },
+    {
+      "n_completed": 16,
+      "p_at50_wins_ttp": 0.0,
+      "p_at50_wins_drug": 1.0,
+      "median_advantage_d": 0.0,
+      "iqr_advantage": [
+        0.0,
+        0.0
+      ],
+      "median_drug_savings": 0.29822222222222217,
+      "K_TP_drop": 7000.0
+    },
+    {
+      "n_completed": 21,
+      "p_at50_wins_ttp": 0.0,
+      "p_at50_wins_drug": 1.0,
+      "median_advantage_d": 0.0,
+      "iqr_advantage": [
+        0.0,
+        0.0
+      ],
+      "median_drug_savings": 0.6782222222222223,
+      "K_TP_drop": 8500.0
+    },
+    {
+      "n_completed": 25,
+      "p_at50_wins_ttp": 1.0,
+      "p_at50_wins_drug": 1.0,
+      "median_advantage_d": 329.7931034482758,
+      "iqr_advantage": [
+        293.1034482758621,
+        354.8965517241379
+      ],
+      "median_drug_savings": 0.9626666666666667,
+      "K_TP_drop": 9900.0
+    }
+  ],
+  "headline": {
+    "n_regimes_scanned": 7,
+    "p_at50_wins_ttp_min": 0.0,
+    "p_at50_wins_ttp_max": 1.0,
+    "any_posterior_sensitive": true,
+    "min_K_TP_drop_with_full_robustness": 9900.0
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "experiment": "fim_3pop_schedule_comparison",
+  "git_sha": "4e9e098",
+  "date": "2026-05-03",
+  "model": "3-pop K-shift Zhang canonical",
+  "param_names": [
+    "r_T+",
+    "r_TP",
+    "r_T-",
+    "\u03b1(T-,T+)",
+    "\u03b1(T-,TP)",
+    "K_TP_drop"
+  ],
+  "param_nominal": [
+    0.0027726,
+    0.0034657,
+    0.0066542,
+    3.0,
+    4.0,
+    9900.0
+  ],
+  "schedules": {
+    "MTD": {
+      "effective_rank": 3,
+      "eigenvalues": [
+        373204939.94611096,
+        23412760.340703107,
+        359895.04501488095,
+        0.8754229028756321,
+        0.00028032662963595976,
+        8.732796776170504e-06
+      ],
+      "condition_number": 42736015678790.17,
+      "least_identifiable_direction": [
+        3.197322196419919e-06,
+        -3.450392704435488e-05,
+        1.2742357826904302e-07,
+        -0.14403861558173492,
+        0.34379677074674975,
+        0.9279313856340043
+      ]
+    },
+    "AT50_replayed": {
+      "n_toggles": 3,
+      "effective_rank": 3,
+      "eigenvalues": [
+        109918585.97681466,
+        1621161.0289027104,
+        13398.778073470881,
+        0.3621977906360696,
+        0.030067105301120552,
+        0.0002907512949782174
+      ],
+      "condition_number": 378050202614.0574,
+      "least_identifiable_direction": [
+        -1.3377344381119691e-05,
+        1.7925866044790237e-06,
+        0.0013684950039580088,
+        0.823091682504141,
+        -0.5678649913773031,
+        -0.006896433847674671
+      ]
+    },
+    "Periodic_56d_50pct": {
+      "effective_rank": 3,
+      "eigenvalues": [
+        396443643.9024894,
+        39040362.49950255,
+        528932.13092004,
+        1.6162446798764898,
+        0.003034848201454543,
+        2.2900719476478125e-05
+      ],
+      "condition_number": 17311405622416.629,
+      "least_identifiable_direction": [
+        1.417601174820408e-05,
+        -4.302581125059307e-05,
+        1.7215717846577949e-06,
+        -0.1052019249618453,
+        0.24601315197948895,
+        0.9635403893881646
+      ]
+    }
+  },
+  "interpretation_notes": [
+    "Same 6-parameter subset as experiment 08; comparable to experiment 05 on the 2-pop model.",
+    "If all three schedules give comparable rank, the 3-pop rank-3 advantage is intrinsic to the model + observation pair (matches WP1 \u00a74 finding for the 2-pop case extended).",
+    "If AT50 / periodic differ from MTD in rank, the 3-pop case shows schedule-dependent identifiability \u2014 a more nuanced story for WP1."
+  ]
+}

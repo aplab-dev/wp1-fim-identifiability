@@ -1,0 +1,86 @@
+{
+  "experiment": "fim_3pop_zhang_under_mtd",
+  "git_sha": "24880c4",
+  "date": "2026-05-02",
+  "model": "3-pop K-shift (Zhang canonical params)",
+  "param_names": [
+    "r_T+",
+    "r_TP",
+    "r_T-",
+    "\u03b1(T-,T+)",
+    "\u03b1(T-,TP)",
+    "K_TP_drop"
+  ],
+  "param_nominal": [
+    0.0027726,
+    0.0034657,
+    0.0066542,
+    3.0,
+    4.0,
+    9900.0
+  ],
+  "fixed_params": {
+    "K_Tminus": 10000.0,
+    "K_TP_max": 10000.0,
+    "mu_max": 1.5,
+    "mu_drop": 1.0,
+    "alpha_off_diagonal_T_plus_TP_block": [
+      [
+        0.5,
+        0.7
+      ],
+      [
+        0.4,
+        0.5
+      ]
+    ],
+    "x0": [
+      3500.0,
+      3500.0,
+      50.0
+    ],
+    "psa_params": {
+      "phi": 0.5,
+      "rho": 1.0
+    }
+  },
+  "observation": {
+    "schedule": "MTD only",
+    "n_obs": 54,
+    "t_max_days": 1484.0,
+    "noise_model": "10% relative, floored at 10% of peak PSA"
+  },
+  "fim_eigenvalues": [
+    373204939.94611096,
+    23412760.340703107,
+    359895.04501488095,
+    0.8754229028756321,
+    0.00028032662963595976,
+    8.732796776170504e-06
+  ],
+  "effective_rank": 3,
+  "n_params": 6,
+  "rank_deficient": true,
+  "condition_number": 42736015678790.17,
+  "most_identifiable_direction": [
+    0.059073982489963844,
+    0.18350585553413323,
+    0.9812419808456302,
+    -0.0001851901152001956,
+    -7.911089600255314e-05,
+    7.049339635172095e-06
+  ],
+  "least_identifiable_direction": [
+    3.197322196419919e-06,
+    -3.450392704435488e-05,
+    1.2742357826904302e-07,
+    -0.14403861558173492,
+    0.34379677074674975,
+    0.9279313856340043
+  ],
+  "comparison_to_stage_2_5b": {
+    "stage_2_5b_2pop_rank": "1 / 4",
+    "this_3pop_rank": "3 / 6",
+    "interpretation": "3-pop has more time-scale structure (fast T+/TP collapse vs slow T- regrowth), which the FIM can resolve. If rank > 1, schedule cycling could expose still more directions; if rank still 1, the rank deficiency is even more severe than 2-pop."
+  }
+}

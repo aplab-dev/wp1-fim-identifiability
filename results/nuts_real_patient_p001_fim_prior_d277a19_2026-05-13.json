@@ -1,0 +1,45 @@
+{
+  "experiment": "nuts_real_patient_bruchovsky_p001_with_fim_eigenbasis_prior",
+  "git_sha": "d277a19",
+  "date": "2026-05-13",
+  "patient_id": "bruchovsky_p001",
+  "patient_n_obs": 75,
+  "fim_eigenbasis_prior": {
+    "construction": "FIM computed in log-θ space at canonical Zhang θ with this patient's schedule + noise; eigendecomposed; per-direction std = 0.5 if λ_k/λ_max > 1e-3 else 0.05; covariance rotated back to log-θ basis",
+    "theta_nominal": [0.0028, 0.0035, 0.0067, 3.0, 4.0, 9900.0],
+    "prior_log_mean": [-5.878, -5.655, -5.006, 1.099, 1.386, 9.200],
+    "marginal_stds_sqrt_diag_cov": [0.0505, 0.0505, 0.4991, 0.0556, 0.0522, 0.4999],
+    "interpretation": "FIM at this patient's schedule says r_T+/r_TP/α(T-,T+)/α(T-,TP) are well-identified directions (tight prior), r_T- and K_TP_drop are NOT well-identified (loose prior). Note: different from the §3.2 MTD-schedule FIM eigenvectors."
+  },
+  "nuts": {
+    "n_chains": 4,
+    "n_samples": 500,
+    "n_warmup": 500,
+    "target_accept": 0.90,
+    "integrator": "jax_native_heun_dt_0.5",
+    "prior_type": "MultivariateNormal in log-θ space",
+    "elapsed_s": 1179.2,
+    "elapsed_min": 19.7,
+    "samples_shape": [2000, 6],
+    "rhat": [5751.291, 145.876, 3874.214, 4953.659, 403.314, 74.798],
+    "rhat_max": 5751.291,
+    "converged_at_1_10": false,
+    "converged_at_1_50": false,
+    "theta_posterior_mean": [0.4319, 9.1997, 1.7019, 2.0813, 3.4171, 1.7009],
+    "theta_posterior_std": [0.6134, 10.5667, 2.3494, 2.0748, 2.3782, 1.0084]
+  },
+  "comparison": {
+    "default_prior_rhat_max": 346.450,
+    "hier_prior_rhat_max": 9004.355,
+    "fim_eigenbasis_prior_rhat_max": 5751.291,
+    "verdict": "None of the three priors fixes NUTS R-hat. All chains diverge into NaN-guard plateaus far from prior mean."
+  },
+  "diagnosis": [
+    "All three NUTS runs (default, hier-informed, FIM-eigenbasis) produce chains that wander FAR outside the prior mean.",
+    "Root cause: when proposed θ pushes the integrator into regions producing NaN PSA, the NaN-guard substitutes observed PSA and inflates noise — yielding a FLAT log-likelihood plateau instead of a sharp -inf barrier.",
+    "NUTS treats this flat plateau as a valid mode and wanders. Different chains find different plateaus.",
+    "Tighter priors (whether marginal or multivariate) cannot fix this because the plateaus are within the high-density region of the prior support.",
+    "Two-pronged fix needed: (a) hard-rejection NaN-guard (return -inf log-density), or (b) re-fit canonical θ to Bruchovsky data so prior center is in a data-compatible region."
+  ],
+  "param_names": ["r_T+", "r_TP", "r_T-", "α(T-,T+)", "α(T-,TP)", "K_TP_drop"]
+}

@@ -1,0 +1,150 @@
+{
+  "experiment": "real_cohort_pa_vs_pe",
+  "git_sha": "9a37923",
+  "date": "2026-05-03",
+  "data_source": "http://www.nicholasbruchovsky.com/dataTanaka.zip",
+  "n_patients_loaded": 5,
+  "n_patients_evaluated": 5,
+  "settings": {
+    "n_chains": 2,
+    "mh_n_steps": 400,
+    "burn_in": 150,
+    "n_post_samples": 12,
+    "n_sim_per": 2
+  },
+  "headline": {
+    "n_pe_recommends_at50": 0,
+    "n_pa_recommends_at50": 2,
+    "n_pe_pa_disagree": 2,
+    "pe_pa_disagreement_rate": 0.4,
+    "n_posterior_sensitive": 0,
+    "n_mcmc_converged_rhat_under_1_50": 0
+  },
+  "per_patient_results": [
+    {
+      "patient_id": "bruchovsky_p001",
+      "n_obs": 75,
+      "baseline_psa": 29.0,
+      "clinical_progressed": false,
+      "clinical_ttp": null,
+      "mcmc_rhat_max": 7.166821347175318,
+      "mcmc_converged_at_1_50": false,
+      "posterior_mean_theta": [
+        0.0033775141970434405,
+        0.004001736175578579,
+        0.004143977555354877,
+        4.221662362763863,
+        5.3106789404452766,
+        9430.473910316998
+      ],
+      "pe_choice": "MTD",
+      "pe_ttp_mtd_d": 1500.0,
+      "pe_ttp_at50_d": 1500.0,
+      "pa_choice": "MTD",
+      "pa_expected_ttp_mtd_d": 1500.0,
+      "pa_expected_ttp_at50_d": 1500.0,
+      "pa_p_at50_wins": 0.0,
+      "pe_pa_disagree": false
+    },
+    {
+      "patient_id": "bruchovsky_p002",
+      "n_obs": 83,
+      "baseline_psa": 7.7,
+      "clinical_progressed": false,
+      "clinical_ttp": null,
+      "mcmc_rhat_max": 3.619132577123408,
+      "mcmc_converged_at_1_50": false,
+      "posterior_mean_theta": [
+        0.004483303840846212,
+        0.004688804609544301,
+        0.004142149055437349,
+        3.851167572038711,
+        5.388221328178133,
+        9862.64078219518
+      ],
+      "pe_choice": "MTD",
+      "pe_ttp_mtd_d": 1500.0,
+      "pe_ttp_at50_d": 1500.0,
+      "pa_choice": "AT50",
+      "pa_expected_ttp_mtd_d": 1495.9942528735635,
+      "pa_expected_ttp_at50_d": 1500.0,
+      "pa_p_at50_wins": 0.08333333333333333,
+      "pe_pa_disagree": true
+    },
+    {
+      "patient_id": "bruchovsky_p003",
+      "n_obs": 34,
+      "baseline_psa": 16.5,
+      "clinical_progressed": false,
+      "clinical_ttp": null,
+      "mcmc_rhat_max": 3.655990067120201,
+      "mcmc_converged_at_1_50": false,
+      "posterior_mean_theta": [
+        0.003349868095074275,
+        0.003080357508633152,
+        0.0057086964925473485,
+        4.374195193964015,
+        4.740728532957856,
+        9358.039968859279
+      ],
+      "pe_choice": "MTD",
+      "pe_ttp_mtd_d": 1500.0,
+      "pe_ttp_at50_d": 1500.0,
+      "pa_choice": "MTD",
+      "pa_expected_ttp_mtd_d": 1500.0,
+      "pa_expected_ttp_at50_d": 1500.0,
+      "pa_p_at50_wins": 0.0,
+      "pe_pa_disagree": false
+    },
+    {
+      "patient_id": "bruchovsky_p004",
+      "n_obs": 44,
+      "baseline_psa": 12.0,
+      "clinical_progressed": false,
+      "clinical_ttp": null,
+      "mcmc_rhat_max": 2.6169756815224203,
+      "mcmc_converged_at_1_50": false,
+      "posterior_mean_theta": [
+        0.004828246199484134,
+        0.005036353769658435,
+        0.005207779281223418,
+        3.8197652004167946,
+        4.580294461569732,
+        9150.109163533953
+      ],
+      "pe_choice": "MTD",
+      "pe_ttp_mtd_d": 1500.0,
+      "pe_ttp_at50_d": 1500.0,
+      "pa_choice": "MTD",
+      "pa_expected_ttp_mtd_d": 1500.0,
+      "pa_expected_ttp_at50_d": 1500.0,
+      "pa_p_at50_wins": 0.0,
+      "pe_pa_disagree": false
+    },
+    {
+      "patient_id": "bruchovsky_p006",
+      "n_obs": 40,
+      "baseline_psa": 28.4,
+      "clinical_progressed": false,
+      "clinical_ttp": null,
+      "mcmc_rhat_max": 5.068570232609029,
+      "mcmc_converged_at_1_50": false,
+      "posterior_mean_theta": [
+        0.003220570048418863,
+        0.00327194413335032,
+        0.00400675348410151,
+        4.051647178089915,
+        4.219310027299991,
+        9771.175960618968
+      ],
+      "pe_choice": "MTD",
+      "pe_ttp_mtd_d": 1500.0,
+      "pe_ttp_at50_d": 1500.0,
+      "pa_choice": "AT50",
+      "pa_expected_ttp_mtd_d": 1499.212643678161,
+      "pa_expected_ttp_at50_d": 1500.0,
+      "pa_p_at50_wins": 0.08333333333333333,
+      "pe_pa_disagree": true
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+title: >-
+  Fisher Information Matrix Identifiability of Lotka-Volterra Models in
+  Adaptive Cancer Therapy: Rank Deficiency and Posterior-Aware Control
+message: >-
+  If you use this code or data, please cite the arXiv preprint below.
+type: article
+authors:
+  - family-names: Prikhodko
+    given-names: Aleksei
+    email: aplab.official@gmail.com
+    affiliation: Independent researcher
+date-released: '2026-05-16'
+repository-code: 'https://github.com/aplab-dev/wp1-fim-identifiability'
+license: MIT
+abstract: >-
+  Adaptive cancer therapy schedules drug-on/drug-off cycles based on biomarker
+  dynamics, with the goal of preserving competitive pressure from drug-sensitive
+  cells against drug-resistant ones. Three independent prior studies
+  (Brady-Nicholls 2020, Strobl 2022, Gallagher 2025) fit different
+  Lotka-Volterra parameterizations to overlapping clinical cohorts and converge
+  on the empirical conclusion that approximately one effective parameter per
+  patient is recoverable from PSA-only observation. We provide the structural
+  explanation: the Fisher Information Matrix of the canonical 2-population
+  multiplicative-death model has effective rank 1 of 4. The 3-population
+  K-shift model used by Zhang 2017 has rank 3 of 6 with the unidentifiable
+  subspace localized in the competition coefficients and drug-effectiveness
+  parameter. The rank deficiency is schedule-invariant and channel-invariant:
+  multi-modal observation channels improve precision but do not close the rank
+  gap. We propagate this posterior structure through to clinical
+  decision-making and show that on the real Bruchovsky 2008 IADT cohort (n=71)
+  posterior-aware vs point-estimate optimal control disagrees for 37% of
+  patients; on the Shaw 2007 cohort (n=15) the disagreement is 13%.
+  Cohort-level hierarchical pooling recovers the rank-deficient directions:
+  shrinkage of 86-87% on the most poorly-identified per-patient parameters,
+  with cross-cohort agreement on population means to within 1-3%.
+keywords:
+  - adaptive cancer therapy
+  - Lotka-Volterra
+  - Fisher Information Matrix
+  - identifiability
+  - posterior-aware control
+  - Bayesian decision theory
+  - mCRPC
+  - prostate cancer
+preferred-citation:
+  type: article
+  title: >-
+    Fisher Information Matrix Identifiability of Lotka-Volterra Models in
+    Adaptive Cancer Therapy: Rank Deficiency and Posterior-Aware Control
+  authors:
+    - family-names: Prikhodko
+      given-names: Aleksei
+  year: 2026
+  notes: >-
+    arXiv preprint; insert arXiv ID here once available.

@@ -1,0 +1,68 @@
+{
+  "experiment": "nuts_real_patient_bruchovsky_p001_with_hier_prior",
+  "git_sha": "d4782d9",
+  "date": "2026-05-13",
+  "patient_id": "bruchovsky_p001",
+  "patient_n_obs": 75,
+  "hier_informed_prior": {
+    "source": "results/hierarchical_bruchovsky_summary_c8558cf_2026-05-13.json (population posterior, non-centered model)",
+    "prior_log_mean": [-5.307574, -5.366951, -5.536817, 1.511603, 1.711531, 9.189466],
+    "prior_log_std": [0.067707, 0.323389, 0.067721, 0.023232, 0.019494, 0.010433],
+    "interpretation": [
+      "Population posterior mean μ_α(T-,T+) = +1.512 → α(T-,T+) = exp(1.512) ≈ 4.54 (canonical Zhang: 3.0)",
+      "Population posterior mean μ_α(T-,TP) = +1.712 → α(T-,TP) = exp(1.712) ≈ 5.54 (canonical Zhang: 4.0)",
+      "Bruchovsky cohort suggests T- inhibition coefficients ~50% higher than Zhang's nominal values"
+    ],
+    "tightening_factor_vs_default": {
+      "r_T+": 7.4,
+      "r_TP": 1.5,
+      "r_T-": 7.4,
+      "α(T-,T+)": 12.9,
+      "α(T-,TP)": 15.4,
+      "K_TP_drop": 47.9
+    }
+  },
+  "nuts": {
+    "n_chains": 4,
+    "n_samples": 500,
+    "n_warmup": 500,
+    "target_accept": 0.90,
+    "integrator": "jax_native_heun_dt_0.5",
+    "elapsed_s": 686.5,
+    "elapsed_min": 11.4,
+    "samples_shape": [2000, 6],
+    "rhat": [522.051, 939.043, 9004.355, 758.153, 759.694, 4582.107],
+    "rhat_max": 9004.355,
+    "converged_at_1_10": false,
+    "converged_at_1_50": false,
+    "theta_posterior_mean": [
+      1.0569407219586788,
+      15866.459768066215,
+      1.6847920715524747,
+      2.1439247519823312,
+      3.548560139033253,
+      1269.6159668713885
+    ],
+    "theta_posterior_std": [
+      1.0766653359552847,
+      27476.17158967196,
+      2.3587051888815163,
+      2.055206253734119,
+      2.4117753370045794,
+      2195.673159713147
+    ]
+  },
+  "comparison_to_default_prior": {
+    "default_prior_rhat_max": 346.450,
+    "hier_prior_rhat_max": 9004.355,
+    "verdict": "Hier-informed prior produced WORSE R-hat than default. Tightening marginals does not constrain the joint anti-correlated direction between α(T-,T+) and α(T-,TP)."
+  },
+  "interpretation": [
+    "Diagonal hier-informed prior is INSUFFICIENT to fix per-patient NUTS convergence on the rank-deficient posterior.",
+    "The unidentifiable direction is a joint anti-correlation between α(T-,T+) and α(T-,TP) (§3.3); tightening each marginal independently does not constrain motion along this 1D ridge.",
+    "Next Phase 4 task: non-diagonal prior with proper off-diagonal covariance structure (e.g., FIM-inverse-based covariance or full hierarchical-posterior empirical covariance).",
+    "WP1 claims unaffected: PE-vs-PA disagreement depends on rank-deficient direction width, not on per-patient mode-finding. The hierarchical pooling in §6.11 DOES converge cleanly and confirms the population-level posterior shape."
+  ],
+  "param_names": ["r_T+", "r_TP", "r_T-", "α(T-,T+)", "α(T-,TP)", "K_TP_drop"],
+  "canonical_zhang_theta": [0.0028, 0.0035, 0.0067, 3.0, 4.0, 9900.0]
+}

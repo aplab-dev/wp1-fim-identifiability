@@ -1,0 +1,54 @@
+{
+  "experiment": "posterior_aware_policy_comparison",
+  "git_sha": "e5ca40c",
+  "date": "2026-05-02",
+  "model": "3-pop K-shift Zhang",
+  "param_names": [
+    "r_T+",
+    "r_TP",
+    "r_T-",
+    "\u03b1(T-,T+)",
+    "\u03b1(T-,TP)",
+    "K_TP_drop"
+  ],
+  "param_nominal": [
+    0.0027726,
+    0.0034657,
+    0.0066542,
+    3.0,
+    4.0,
+    9900.0
+  ],
+  "posterior": {
+    "method": "Cram\u00e9r-Rao asymptotic Gaussian: \u03b8 ~ N(\u03b8\u2080, FIM\u207b\u00b9) with regularization (eigenvalue floor at \u03bb_max \u00d7 1e-3)",
+    "n_proposed": 60,
+    "n_valid": 57,
+    "n_completed": 57,
+    "posterior_std_per_param": [
+      0.0014812146989045274,
+      0.0007245529293093665,
+      7.687888271288126e-05,
+      0.0016369156486180578,
+      0.001636915672281227,
+      0.0016369156766423611
+    ]
+  },
+  "headline": {
+    "p_at50_wins_ttp": 1.0,
+    "p_at50_wins_drug": 1.0,
+    "p_at50_wins_both": 1.0,
+    "median_at50_advantage_d": 352.0,
+    "iqr_at50_advantage_d": [
+      316.2758620689656,
+      389.655172413793
+    ],
+    "median_drug_savings_frac": 0.9626666666666667
+  },
+  "interpretation_notes": [
+    "P(AT50 wins TTP) is the probability that AT50 beats MTD on TTP, marginalized over the FIM-induced posterior on the (rank-deficient) parameter space.",
+    "P(AT50 wins drug) is the probability that AT50 uses less cumulative drug than MTD, similarly marginalized.",
+    "If both probabilities are ~100%, the policy choice is robust to identifiability uncertainty.",
+    "If one is ~50%, the choice depends on which direction in the unidentifiable manifold the true parameters lie \u2014 this is the case where posterior-aware control matters most.",
+    "FIM regularization (eigenvalue floor at \u03bb_max \u00d7 1e-3) is a simplification; a real Bayesian fit would use MCMC on the actual likelihood + a domain prior. Phase 3 \u00a73.3 will do that."
+  ]
+}

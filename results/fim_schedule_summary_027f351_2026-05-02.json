@@ -1,0 +1,76 @@
+{
+  "experiment": "fim_schedule_comparison",
+  "git_sha": "027f351",
+  "date": "2026-05-02",
+  "param_names": [
+    "r_S",
+    "r_R",
+    "alpha",
+    "beta"
+  ],
+  "param_nominal": [
+    0.05,
+    0.04,
+    0.7,
+    0.6
+  ],
+  "schedules": {
+    "MTD": {
+      "description": "u(t) = 1.0 for all t",
+      "effective_rank": 1,
+      "eigenvalues": [
+        1519407.91480735,
+        0.0038719142384273588,
+        2.9568142958172246e-08,
+        2.1399270362390278e-10
+      ],
+      "condition_number": 7100279070625441.0,
+      "least_identifiable_direction": [
+        -0.018478530221137452,
+        -1.5811155421543466e-09,
+        0.9998147111147675,
+        0.005393269820830564
+      ]
+    },
+    "AT50_replayed": {
+      "description": "u(t) is the AT50 schedule generated at NOMINAL parameters; replayed for all FIM perturbations.",
+      "n_toggles": 2,
+      "effective_rank": 1,
+      "eigenvalues": [
+        1519406.9279994564,
+        0.0038698664762129055,
+        1.2398689567360877e-07,
+        2.267474181326647e-08
+      ],
+      "condition_number": 67008786274712.34,
+      "least_identifiable_direction": [
+        -0.2783379688755258,
+        7.447495529347785e-08,
+        0.9571668597894342,
+        0.07974695983593795
+      ]
+    },
+    "Periodic_56d_50pct": {
+      "description": "Periodic on/off schedule, period 56 days, 50% duty cycle. Multiple guaranteed toggles regardless of dynamics.",
+      "effective_rank": 1,
+      "eigenvalues": [
+        1519408.7614541177,
+        0.003872471142079048,
+        3.2334908867132387e-07,
+        4.520753888163987e-08
+      ],
+      "condition_number": 33609632354288.477,
+      "least_identifiable_direction": [
+        -0.5590600647098156,
+        5.024652494543587e-08,
+        0.8135775473485839,
+        0.15982308499374065
+      ]
+    }
+  },
+  "interpretation_notes": [
+    "Replayed-AT50 typically shows higher effective rank than MTD because the on-off toggling resolves drug-on phase dynamics (governed by r_S and d) separately from drug-off phase dynamics (r_R, alpha, beta).",
+    "If AT50 effective rank is the same as MTD, identifiability is fundamentally model-limited rather than schedule-limited.",
+    "Single-patient single-realization FIM. Multi-patient pooling deferred to Phase 3."
+  ]
+}

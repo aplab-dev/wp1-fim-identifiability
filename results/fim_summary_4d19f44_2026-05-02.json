@@ -1,0 +1,59 @@
+{
+  "experiment": "fim_identifiability_2pop",
+  "git_sha": "4d19f44",
+  "date": "2026-05-02",
+  "param_names": [
+    "r_S",
+    "r_R",
+    "alpha",
+    "beta"
+  ],
+  "param_nominal": [
+    0.05,
+    0.04,
+    0.7,
+    0.6
+  ],
+  "fixed_params": {
+    "K": 1.0,
+    "d": 1.5,
+    "rho": 1.0,
+    "phi": 0.5,
+    "S0": 0.6,
+    "R0": 0.006
+  },
+  "observation": {
+    "schedule": "MTD only (drug always on)",
+    "n_obs": 18,
+    "t_max": 476.0,
+    "noise_model": "10% relative (sigma = 0.10 * max(PSA, 0.1*PSA_max))"
+  },
+  "fim_eigenvalues": [
+    1519407.91480735,
+    0.0038719142384273588,
+    2.9568142958172246e-08,
+    2.1399270362390278e-10
+  ],
+  "effective_rank": 1,
+  "n_params": 4,
+  "rank_deficient": true,
+  "condition_number": 7100279070625441.0,
+  "most_identifiable_direction": [
+    4.684711079809022e-05,
+    -0.9999999854286897,
+    -2.1269656565665358e-08,
+    0.0001641583644214436
+  ],
+  "least_identifiable_direction": [
+    -0.018478530221137452,
+    -1.5811155421543466e-09,
+    0.9998147111147675,
+    0.005393269820830564
+  ],
+  "interpretation_notes": [
+    "Eigenvalues span many orders of magnitude \u2014 typical for biological L-V models.",
+    "The least-identifiable direction shows which parameter combination produces near-identical PSA trajectories.",
+    "A more informative observation schedule (e.g., AT50 with cycling) would change this picture substantially.",
+    "This is single-schedule single-patient FIM. Phase 3 candidate C extends to per-patient FIM with multi-patient pooling."
+  ]
+}

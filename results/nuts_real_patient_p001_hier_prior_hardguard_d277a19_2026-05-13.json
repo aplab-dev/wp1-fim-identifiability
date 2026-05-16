@@ -1,0 +1,43 @@
+{
+  "experiment": "nuts_real_patient_bruchovsky_p001_with_hier_prior_and_hard_nan_guard",
+  "git_sha": "d277a19",
+  "date": "2026-05-13",
+  "patient_id": "bruchovsky_p001",
+  "patient_n_obs": 75,
+  "purpose": "Test hypothesis that NaN-guard plateaus cause NUTS divergence. Hypothesis falsified.",
+  "hier_informed_prior": {
+    "prior_log_mean": [-5.307574, -5.366951, -5.536817, 1.511603, 1.711531, 9.189466],
+    "prior_log_std": [0.067707, 0.323389, 0.067721, 0.023232, 0.019494, 0.010433]
+  },
+  "nan_guard_mode": "hard (-1e10 log-density penalty when any predict_psa(θ) is NaN)",
+  "nuts": {
+    "n_chains": 4,
+    "n_samples": 500,
+    "n_warmup": 500,
+    "target_accept": 0.90,
+    "integrator": "jax_native_heun_dt_0.5",
+    "elapsed_s": 609.2,
+    "elapsed_min": 10.2,
+    "samples_shape": [2000, 6],
+    "rhat": [868.137, 1070.403, 7978.416, 1298.638, 953.547, 5594.970],
+    "rhat_max": 7978.416,
+    "converged_at_1_10": false,
+    "converged_at_1_50": false,
+    "theta_posterior_mean": [1.0597, 15933.9589, 1.6850, 2.1411, 3.5488, 1269.6945],
+    "theta_posterior_std": [1.0807, 27593.0204, 2.3586, 2.0560, 2.4119, 2195.8092]
+  },
+  "comparison": {
+    "soft_nan_guard_posterior_mean": [1.0569, 15866.4598, 1.6848, 2.1439, 3.5486, 1269.6160],
+    "hard_nan_guard_posterior_mean": [1.0597, 15933.9589, 1.6850, 2.1411, 3.5488, 1269.6945],
+    "verdict": "Posterior means are essentially identical between soft and hard NaN-guard runs (differences < 0.5%). This falsifies the NaN-plateau hypothesis: chains never reach NaN regions in steady state — they diverge during warmup before NaN matters."
+  },
+  "interpretation": [
+    "Posterior mean log(r_TP) ≈ log(15934) ≈ 9.68, prior mean = -5.37, prior std = 0.32.",
+    "9.68 - (-5.37) = 15.05 absolute distance ≈ 47 standard deviations under the prior.",
+    "Under a proper LogNormal prior, this region has log-density ≈ -1100 — astronomically unlikely.",
+    "Conclusion: NUTS is sampling from a chain that diverged during warmup, NOT from the actual posterior.",
+    "Fix requires: (a) deterministic init at canonical θ or MH posterior mean (not random), and/or",
+    "             (b) different sampler with explicit mass-matrix initialization (Stan, variational warm-start)."
+  ],
+  "param_names": ["r_T+", "r_TP", "r_T-", "α(T-,T+)", "α(T-,TP)", "K_TP_drop"]
+}
