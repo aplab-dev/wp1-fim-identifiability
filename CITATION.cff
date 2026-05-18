@@ -10,6 +10,8 @@ authors:
     given-names: Aleksei
     email: aplab.official@gmail.com
     affiliation: Independent researcher
+    orcid: 'https://orcid.org/0009-0003-4182-5463'
+    website: 'https://www.aplab.dev/'
 date-released: '2026-05-16'
 repository-code: 'https://github.com/aplab-dev/wp1-fim-identifiability'
 license: MIT
@@ -51,6 +53,7 @@ preferred-citation:
   authors:
     - family-names: Prikhodko
       given-names: Aleksei
+      orcid: 'https://orcid.org/0009-0003-4182-5463'
   year: 2026
   notes: >-
     arXiv preprint; insert arXiv ID here once available.

@@ -132,6 +132,12 @@ If you use this code or data, please cite the arXiv preprint. A machine-readable
 
 ## Contact
 
-Aleksei Prikhodko — `aplab.official@gmail.com`
+**Aleksei Prikhodko** — Independent researcher
 
-Issues and pull requests welcome. Feedback on the manuscript: please email or open an issue.
+- Website: [aplab.dev](https://www.aplab.dev/)
+- Email: `aplab.official@gmail.com`
+- ORCID: [0009-0003-4182-5463](https://orcid.org/0009-0003-4182-5463)
+- Substack: [@alekseiprikhodko](https://substack.com/@alekseiprikhodko)
+- X: [@AlekseiPrikhodk](https://x.com/AlekseiPrikhodk)
+
+Issues and pull requests welcome. Feedback on the manuscript: please email, open an issue, or DM on X / Substack.
