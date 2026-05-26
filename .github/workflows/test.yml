@@ -1,0 +1,45 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies (incl. dev extras)
+        run: uv sync --python ${{ matrix.python-version }} --extra dev
+
+      - name: Run tests
+        run: uv run pytest tests/ --tb=short -q
+        env:
+          # Skip tests that require real-data files (not shipped in repo)
+          SKIP_REAL_DATA_TESTS: "1"
+
+      - name: Verify paper builds (if PR touches .tex)
+        if: github.event_name == 'pull_request'
+        run: |
+          if git diff --name-only origin/main HEAD | grep -q '\.tex$'; then
+            curl -sLO https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic@0.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz
+            tar xzf tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz
+            cd paper && ../tectonic --chatter minimal WP1_FIM_methods_note.tex
+          fi

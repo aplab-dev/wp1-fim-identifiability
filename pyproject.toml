@@ -1,36 +1,27 @@
 [project]
-name = "adaptive-therapy-research"
+name = "wp1-fim-identifiability"
 version = "0.1.0"
-description = "Adaptive cancer therapy via evolutionary dynamics, optimal control, and reinforcement learning"
-authors = [{name = "Aleksei", email = "aplab.official@gmail.com"}]
+description = "Companion code + data for the WP1 arXiv preprint on FIM identifiability of Lotka-Volterra models in adaptive cancer therapy"
+authors = [{name = "Aleksei Prikhodko", email = "aplab.official@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 
-# Phase 2 (kickoff 2026-05-02 session 14): core scientific stack uncommented.
-# Phase 3+ deps still commented; uncomment when needed.
 dependencies = [
-    # Core scientific stack — Phase 2 onwards
+    # Core scientific stack
     "numpy>=1.26",
     "scipy>=1.13",
     "matplotlib>=3.8",
     "pandas>=2.2",
 
-    # Optimal control — Phase 2 Stage 2.5 onwards (Cunningham 2020 OCP)
+    # Optimal control (Cunningham 2020 reproduction, src/cunningham2020/)
     "casadi>=3.7",  # bundles ipopt for nonlinear optimization
 
-    # RL framework — needed for Phase 3
-    # "gymnasium>=0.29",
-    # "stable-baselines3>=2.3",
-    # "torch>=2.3",
-
-    # Bayesian inference — needed for Phase 3 §3.3
-    # "numpyro>=0.15",  # or pymc
-
-    # Experiment management — needed for Phase 3
-    # "hydra-core>=1.3",
-    # "optuna>=3.6",
-    # "wandb>=0.17",   # or comet/mlflow/tensorboard — pick later
+    # Bayesian inference + JAX simulator (§5, §6.11 hierarchical fit)
+    "jax>=0.4",
+    "jaxlib>=0.4",
+    "diffrax>=0.6",
+    "numpyro>=0.15",
 ]
 
 [project.optional-dependencies]

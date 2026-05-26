@@ -1,11 +1,16 @@
 # WP1: Fisher Information Matrix Identifiability of L-V Models in Adaptive Cancer Therapy
 
+[![tests](https://github.com/aplab-dev/wp1-fim-identifiability/actions/workflows/test.yml/badge.svg)](https://github.com/aplab-dev/wp1-fim-identifiability/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: CC BY 4.0](https://img.shields.io/badge/Paper-CC%20BY%204.0-lightgrey.svg)](LICENSE-paper)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+
 Companion code, data, and reproducibility artifacts for the methods note:
 
 > **Fisher Information Matrix Identifiability of Lotka-Volterra Models in Adaptive Cancer Therapy: Rank Deficiency and Posterior-Aware Control**
 >
-> Aleksei Prikhodko, independent researcher
-> arXiv preprint (link TBD upon submission)
+> Aleksei Prikhodko, independent researcher · [ORCID: 0009-0003-4182-5463](https://orcid.org/0009-0003-4182-5463)
+> arXiv preprint: `[ARXIV_URL — to be filled in upon submission]`
 
 ## What's in this repo
 
